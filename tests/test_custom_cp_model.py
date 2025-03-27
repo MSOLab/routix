@@ -2,7 +2,7 @@ import unittest
 
 from ortools.sat.python.cp_model import LinearExpr
 
-from clad.custom_cp_model import CustomCpModel
+from clad import CustomCpModel
 
 
 class TestCustomCpModel(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestCustomCpModel(unittest.TestCase):
         x = self.model.NewIntVar(0, 10, "x")
         y = self.model.NewIntVar(0, 10, "y")
         self.model.add_linear_constraint_fast([x, y], [1, 2], (5, 20))
-        constraints = self.model._CpModel__model.constraints
+        constraints = self.model._get_constraints()
         self.assertEqual(len(constraints), 1)
         self.assertEqual(constraints[0].linear.vars, [x.Index(), y.Index()])
         self.assertEqual(constraints[0].linear.coeffs, [1, 2])
@@ -33,7 +33,7 @@ class TestCustomCpModel(unittest.TestCase):
         y = self.model.NewIntVar(0, 10, "y")
         args_list = [([x, y], [1, 2], (5, 20)), ([x], [3], (0, 10))]
         self.model.add_temporal_linear_constraints(args_list)
-        constraints = self.model._CpModel__model.constraints
+        constraints = self.model._get_constraints()
         self.assertEqual(len(constraints), 2)
         self.assertEqual(self.model.idx_added_constraints, [(0, 2)])
 
@@ -43,7 +43,7 @@ class TestCustomCpModel(unittest.TestCase):
         expr = LinearExpr.Sum([x])
         args_list = [(x, expr)]
         self.model.add_temporal_abs_equality_constraints(args_list)
-        constraints = self.model._CpModel__model.constraints
+        constraints = self.model._get_constraints()
         self.assertEqual(len(constraints), 1)
         self.assertEqual(self.model.idx_added_constraints, [(0, 1)])
 
@@ -53,7 +53,7 @@ class TestCustomCpModel(unittest.TestCase):
         y = self.model.NewIntVar(0, 10, "y")
         self.model.add_linear_constraint_fast([x, y], [1, 2], (5, 20))
         self.model.delete_constraints(0, 1)
-        constraints = self.model._CpModel__model.constraints
+        constraints = self.model._get_constraints()
         self.assertEqual(len(constraints), 0)
 
     def test_delete_added_constraints(self):
@@ -62,7 +62,7 @@ class TestCustomCpModel(unittest.TestCase):
         y = self.model.NewIntVar(0, 10, "y")
         self.model.add_temporal_linear_constraints([([x, y], [1, 2], (5, 20))])
         self.model.delete_added_constraints()
-        constraints = self.model._CpModel__model.constraints
+        constraints = self.model._get_constraints()
         self.assertEqual(len(constraints), 0)
         self.assertEqual(len(self.model.added_constraints), 0)
         self.assertEqual(len(self.model.idx_added_constraints), 0)

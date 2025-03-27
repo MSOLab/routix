@@ -1,7 +1,6 @@
 import unittest
 
-from clad.dynamic_data_object import DynamicDataObject
-from clad.subroutine_controller import SubroutineController
+from clad import DynamicDataObject, SubroutineController
 
 
 class DummySubController(SubroutineController):

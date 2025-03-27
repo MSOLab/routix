@@ -3,11 +3,10 @@ import tempfile
 import unittest
 from pathlib import PurePath
 
-from clad.dynamic_data_object import DynamicDataObject
+from clad import DynamicDataObject
 
 
 class TestDynamicDataObject(unittest.TestCase):
-
     def test_valid_initialization(self):
         data = DynamicDataObject({"name": "Alice", "age": 25})
         self.assertEqual(data.name, "Alice")

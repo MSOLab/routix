@@ -118,7 +118,7 @@ class DynamicDataObject(object):
         """
         try:
             with open(file_path, "w", encoding="utf-8") as writer:
-                json.dump(self.to_dict(), writer, indent=2, ensure_ascii=False)
+                json.dump(self.to_obj(), writer, indent=2, ensure_ascii=False)
         except (IOError, OSError) as e:
             raise RuntimeError(f"Error writing to file {file_path}: {e}")
 
