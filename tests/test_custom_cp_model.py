@@ -11,13 +11,11 @@ class TestCustomCpModel(unittest.TestCase):
         self.model = CustomCpModel()
 
     def test_change_domain(self):
-        """Test the change_domain method."""
         var = self.model.NewIntVar(0, 10, "x")
         self.model.change_domain(var, [5, 15])
         self.assertEqual(var.Proto().domain, [5, 15])
 
     def test_add_linear_constraint_fast(self):
-        """Test the add_linear_constraint_fast method."""
         x = self.model.NewIntVar(0, 10, "x")
         y = self.model.NewIntVar(0, 10, "y")
         self.model.add_linear_constraint_fast([x, y], [1, 2], (5, 20))
@@ -28,7 +26,6 @@ class TestCustomCpModel(unittest.TestCase):
         self.assertEqual(constraints[0].linear.domain, [5, 20])
 
     def test_add_temporal_linear_constraints(self):
-        """Test the add_temporal_linear_constraints method."""
         x = self.model.NewIntVar(0, 10, "x")
         y = self.model.NewIntVar(0, 10, "y")
         args_list = [([x, y], [1, 2], (5, 20)), ([x], [3], (0, 10))]
@@ -38,7 +35,6 @@ class TestCustomCpModel(unittest.TestCase):
         self.assertEqual(self.model.idx_added_constraints, [(0, 2)])
 
     def test_add_temporal_abs_equality_constraints(self):
-        """Test the add_temporal_abs_equality_constraints method."""
         x = self.model.NewIntVar(0, 10, "x")
         expr = LinearExpr.Sum([x])
         args_list = [(x, expr)]
@@ -48,7 +44,6 @@ class TestCustomCpModel(unittest.TestCase):
         self.assertEqual(self.model.idx_added_constraints, [(0, 1)])
 
     def test_delete_constraints(self):
-        """Test the delete_constraints method."""
         x = self.model.NewIntVar(0, 10, "x")
         y = self.model.NewIntVar(0, 10, "y")
         self.model.add_linear_constraint_fast([x, y], [1, 2], (5, 20))
@@ -57,7 +52,6 @@ class TestCustomCpModel(unittest.TestCase):
         self.assertEqual(len(constraints), 0)
 
     def test_delete_added_constraints(self):
-        """Test the delete_added_constraints method."""
         x = self.model.NewIntVar(0, 10, "x")
         y = self.model.NewIntVar(0, 10, "y")
         self.model.add_temporal_linear_constraints([([x, y], [1, 2], (5, 20))])
