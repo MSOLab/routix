@@ -1,106 +1,121 @@
-from collections import defaultdict
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+import yaml
+
+from .solver_output_summary import SolverOutputSummary
 from .solver_status import SolverStatus
 
 
+@dataclass
 class ExperimentSummary:
     """
-    Summarizes the entire experimental run for one instance.
+    A high-level summary of a full CP-LNS experiment for a single instance.
+
+    Accumulates multiple `SolverOutputSummary` objects
+    (e.g., base CP solve + LNS iterations),
+    tracks method call frequencies, and computes summary statistics
+    such as total runtime, final solution status, and improvement ratio.
+
+    Example usage:
+        >>> summary = ExperimentSummary("instance_42")
+        >>> summary.log_run("base_cp_solve",
+        ...     SolverOutputSummary(
+        ...         status="FEASIBLE",
+        ...         elapsed_time=3.7,
+        ...         objective_value=1200,
+        ...         best_objective_bound=1100,
+        ...         progress_log=[(0.5, 1400, 1300), (2.1, 1300, 1150)]
+        ...     )
+        ... )
+        >>> summary.report()
+        >>> summary.save_as_yaml(Path("logs/summary_instance_42.yaml"))
     """
 
-    def __init__(self, name: str):
-        self.name: str = name
-        self.total_elapsed_time_sec: Optional[float] = None
+    name: str
+    """Identifier of the instance or experiment."""
+    runs: list[SolverOutputSummary] = field(default_factory=list)
+    """List of solver results."""
+    method_call_counts: dict[str, int] = field(default_factory=dict)
+    """Frequency of method invocations."""
 
-        self.method_call_dict: dict[str, int] = defaultdict(int)
+    def log_run(self, method_name: str, summary: SolverOutputSummary) -> None:
+        """Records a solver run and its associated method call."""
+        self.record_method_call(method_name)
+        self.add_run_summary(summary)
 
-        self.initial_obj: Optional[float] = None
-        self.final_obj: Optional[float] = None
-        self.initial_lb: Optional[float] = None
-        self.final_lb: Optional[float] = None
+    def add_run_summary(self, summary: SolverOutputSummary) -> None:
+        """Appends a solver run summary to the experiment."""
+        self.runs.append(summary)
 
-        self.status: str = SolverStatus.UNKNOWN
+    def record_method_call(self, method_name: str) -> None:
+        """Increments the count for a method call."""
+        self.method_call_counts[method_name] = (
+            self.method_call_counts.get(method_name, 0) + 1
+        )
 
-    def record_method_call(self, method_name: str):
-        """Record a method call and increment its count."""
-        self.method_call_dict[method_name] += 1
+    def get_initial_summary(self) -> Optional[SolverOutputSummary]:
+        return self.runs[0] if self.runs else None
 
-    def record_initial_solution(self, obj: float, lb: float):
-        """Record the initial solution right after base CP solve."""
-        self.initial_obj = obj
-        self.initial_lb = lb
+    def get_final_summary(self) -> Optional[SolverOutputSummary]:
+        return self.runs[-1] if self.runs else None
 
-    def record_final_solution(self, obj: float, lb: float):
-        """Record the final solution after all LNS search."""
-        self.final_obj = obj
-        self.final_lb = lb
+    def get_total_elapsed_time(self) -> float:
+        return sum(run.elapsed_time for run in self.runs)
 
-    def record_total_elapsed_time(self, elapsed_time_sec: float):
-        """Record the total elapsed time."""
-        self.total_elapsed_time_sec = elapsed_time_sec
-
-    def record_feasibility(self, feasible: bool):
-        """Record whether the final solution is feasible."""
-        if feasible:
-            self.status = SolverStatus.FEASIBLE
-        else:
-            self.status = SolverStatus.INFEASIBLE
-
-    @property
     def is_feasible(self) -> bool:
-        return SolverStatus.found_feasible_solution(self.status)
+        final = self.get_final_summary()
+        return SolverStatus.found_feasible_solution(final.status) if final else False
 
     def get_improvement_ratio(self) -> Optional[float]:
-        """Calculate and return the improvement ratio."""
-        if self.initial_obj is None or self.final_obj is None:
+        init = self.get_initial_summary()
+        final = self.get_final_summary()
+        if not (init and final and init.objective_value and final.objective_value):
             return None
-        if self.initial_obj == 0:
+        if init.objective_value == 0:
             return None
-        return (self.initial_obj - self.final_obj) / self.initial_obj
+        return (init.objective_value - final.objective_value) / init.objective_value
 
-    def report(self):
-        print("\n=== Experiment Summary ===")
-        print(f"Instance: {self.name}")
+    def report(self) -> None:
+        print(f"\n=== Experiment Summary: {self.name} ===")
+        print(f"Total elapsed time: {self.get_total_elapsed_time():.2f} sec")
+        final = self.get_final_summary()
+        print(f"Final status: {final.status if final else 'N/A'}")
+        print(f"Final objective: {final.objective_value if final else 'N/A'}")
+        ratio = self.get_improvement_ratio()
         print(
-            f"Total elapsed time: {self.total_elapsed_time_sec:.2f} sec"
-            if self.total_elapsed_time_sec is not None
-            else "Elapsed time: N/A"
+            f"Improvement ratio: {ratio:.2%}"
+            if ratio is not None
+            else "Improvement: N/A"
         )
-        print(f"Initial objective: {self.initial_obj}")
-        print(f"Final objective: {self.final_obj}")
-        improvement = self.get_improvement_ratio()
-        if improvement is not None:
-            print(f"Improvement ratio: {improvement:.2%}")
-        else:
-            print("Improvement ratio: N/A")
-        print(f"Last status: {self.status}")
         print("--- Method Call Counts ---")
-        for method, count in sorted(self.method_call_dict.items()):
+        for method, count in sorted(self.method_call_counts.items()):
             print(f"{method}: {count} calls")
-        print("===========================\n")
+        print("====================================\n")
 
-    def save_as_yaml(self, file_path: Path) -> None:
-        """Save the experiment summary to a YAML file."""
-        import yaml
-
-        data = {
+    def to_dict(self) -> dict:
+        return {
             "instance_name": self.name,
-            "total_elapsed_time_sec": self.total_elapsed_time_sec,
-            "initial_obj": self.initial_obj,
-            "final_obj": self.final_obj,
-            "initial_lb": self.initial_lb,
-            "final_lb": self.final_lb,
+            "total_elapsed_time": self.get_total_elapsed_time(),
+            "final_status": self.get_final_summary().status if self.runs else None,
+            "initial_obj": self.get_initial_summary().objective_value
+            if self.runs
+            else None,
+            "final_obj": self.get_final_summary().objective_value
+            if self.runs
+            else None,
             "improvement_ratio": self.get_improvement_ratio(),
-            "status": self.status,
-            "is_feasible": self.is_feasible,
-            "method_call_counts": dict(self.method_call_dict),
+            "is_feasible": self.is_feasible(),
+            "method_call_counts": self.method_call_counts,
+            "num_runs": len(self.runs),
         }
 
+    def save_as_yaml(self, file_path: Path) -> None:
+        """Saves the summary to a YAML file."""
         try:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
-                yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+                yaml.safe_dump(self.to_dict(), f, sort_keys=False, allow_unicode=True)
         except Exception as e:
             raise RuntimeError(f"Error saving ExperimentSummary to {file_path}: {e}")

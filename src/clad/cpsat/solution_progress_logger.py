@@ -4,26 +4,52 @@ from ..elapsed_timer import ElapsedTimer
 
 
 class SolutionProgressLogger(cp_model.CpSolverSolutionCallback):
-    _elapsed_timer: ElapsedTimer
-    _log: list[tuple[float, float, float]]
-    """List of tuples containing (elapsed time, objective value, best bound)"""
-    _print_on_solution_callback: bool
-    """Flag to print the log on each solution callback"""
+    """
+    A lightweight logger for tracking the progress of solution discovery
+    during CP-SAT solving.
+
+    This class is designed to be used as a callback with the OR-Tools CpSolver.
+    It logs a timestamped record of each feasible solution found, capturing:
+
+    - Elapsed time since solving began
+    - Objective value of the current solution
+    - Best known objective bound at that moment
+
+    The logger does **not** analyze or interpret results.
+    It only accumulates raw progress data, which can be retrieved later
+    (e.g., for plotting, reporting, or summary generation).
+
+    Example usage:
+        >>> logger = SolutionProgressLogger(timer)
+        >>> solver.SolveWithSolutionCallback(model, logger)
+        >>> progress = logger.get_log()
+    """
+
+    __elapsed_timer: ElapsedTimer
+    __log: list[tuple[float, float, float]]
+    __print_on_solution_callback: bool
 
     def __init__(
         self, elapsed_timer: ElapsedTimer, print_on_solution_callback: bool = False
     ) -> None:
         super().__init__()
-        self._elapsed_timer = elapsed_timer
-        self._log = []
-        self._print_on_solution_callback = print_on_solution_callback
+        self.__elapsed_timer = elapsed_timer
+        self.__log = []
+        self.__print_on_solution_callback = print_on_solution_callback
+
+    def is_verbose(self) -> bool:
+        """
+        Returns:
+            bool: True if the logger prints on each solution callback.
+        """
+        return self.__print_on_solution_callback
 
     def on_solution_callback(self) -> None:
-        elapsed = self._elapsed_timer.get_elapsed_sec()
+        elapsed = self.__elapsed_timer.get_elapsed_sec()
         objective = self.ObjectiveValue()
         best_bound = self.BestObjectiveBound()
-        self._log.append((elapsed, objective, best_bound))
-        if self._print_on_solution_callback:
+        self.__log.append((elapsed, objective, best_bound))
+        if self.__print_on_solution_callback:
             print(
                 f"Time: {elapsed:.2f} sec"
                 f", Objective: {objective}, Best Bound: {best_bound}"
@@ -36,4 +62,4 @@ class SolutionProgressLogger(cp_model.CpSolverSolutionCallback):
             list[tuple[float, float, float]]: a list of tuples
                 containing (elapsed time, objective value, best bound)
         """
-        return self._log.copy()
+        return self.__log.copy()
