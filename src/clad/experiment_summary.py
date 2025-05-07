@@ -55,34 +55,72 @@ class ExperimentSummary:
             self.method_call_counts.get(method_name, 0) + 1
         )
 
-    def get_initial_summary(self) -> Optional[SolverOutputSummary]:
+    def get_first_summary(self) -> Optional[SolverOutputSummary]:
         return self.runs[0] if self.runs else None
 
-    def get_final_summary(self) -> Optional[SolverOutputSummary]:
+    def get_last_summary(self) -> Optional[SolverOutputSummary]:
         return self.runs[-1] if self.runs else None
+
+    def get_summary_minimum_obj(self) -> Optional[SolverOutputSummary]:
+        feasible_runs = [
+            run for run in self.runs if SolverStatus.found_feasible_solution(run.status)
+        ]
+        if not feasible_runs:
+            return None
+        return min(
+            feasible_runs,
+            key=lambda run: run.objective_value
+            if run.objective_value
+            else float("inf"),
+        )
+
+    def get_summary_maximum_obj(self) -> Optional[SolverOutputSummary]:
+        feasible_runs = [
+            run for run in self.runs if SolverStatus.found_feasible_solution(run.status)
+        ]
+        if not feasible_runs:
+            return None
+        return max(
+            feasible_runs,
+            key=lambda run: run.objective_value
+            if run.objective_value
+            else float("-inf"),
+        )
 
     def get_total_elapsed_time(self) -> float:
         return sum(run.elapsed_time for run in self.runs)
 
-    def is_feasible(self) -> bool:
-        final = self.get_final_summary()
-        return SolverStatus.found_feasible_solution(final.status) if final else False
+    def found_feasible_solution(self, is_maximize: bool = False) -> bool:
+        if is_maximize:
+            best = self.get_summary_maximum_obj()
+        else:
+            best = self.get_summary_minimum_obj()
+        return SolverStatus.found_feasible_solution(best.status) if best else False
 
-    def get_improvement_ratio(self) -> Optional[float]:
-        init = self.get_initial_summary()
-        final = self.get_final_summary()
-        if not (init and final and init.objective_value and final.objective_value):
-            return None
-        if init.objective_value == 0:
-            return None
-        return (init.objective_value - final.objective_value) / init.objective_value
+    def get_improvement_ratio(self, is_maximize: bool = False) -> Optional[float]:
+        first = self.get_first_summary()
+        if is_maximize:
+            best = self.get_summary_maximum_obj()
+        else:
+            best = self.get_summary_minimum_obj()
 
-    def report(self) -> None:
+        if not (first and best and first.objective_value and best.objective_value):
+            return None
+        if first.objective_value == 0:
+            return None
+        return (first.objective_value - best.objective_value) / first.objective_value
+
+    def report(self, is_maximize: bool = False) -> None:
         print(f"\n=== Experiment Summary: {self.name} ===")
         print(f"Total elapsed time: {self.get_total_elapsed_time():.2f} sec")
-        final = self.get_final_summary()
-        print(f"Final status: {final.status if final else 'N/A'}")
-        print(f"Final objective: {final.objective_value if final else 'N/A'}")
+
+        if is_maximize:
+            best = self.get_summary_maximum_obj()
+        else:
+            best = self.get_summary_minimum_obj()
+        print(f"Final status: {best.status if best else 'N/A'}")
+        print(f"Final objective: {best.objective_value if best else 'N/A'}")
+
         ratio = self.get_improvement_ratio()
         print(
             f"Improvement ratio: {ratio:.2%}"
@@ -94,19 +132,22 @@ class ExperimentSummary:
             print(f"{method}: {count} calls")
         print("====================================\n")
 
-    def to_dict(self) -> dict:
+    def to_dict(self, is_maximize: bool = False) -> dict:
+        if is_maximize:
+            best = self.get_summary_maximum_obj()
+        else:
+            best = self.get_summary_minimum_obj()
+
         return {
             "instance_name": self.name,
             "total_elapsed_time": self.get_total_elapsed_time(),
-            "final_status": self.get_final_summary().status if self.runs else None,
-            "initial_obj": self.get_initial_summary().objective_value
+            "status": best.status if self.runs else None,
+            "first_obj": self.get_first_summary().objective_value
             if self.runs
             else None,
-            "final_obj": self.get_final_summary().objective_value
-            if self.runs
-            else None,
+            "best_obj": best.objective_value if self.runs else None,
             "improvement_ratio": self.get_improvement_ratio(),
-            "is_feasible": self.is_feasible(),
+            "is_feasible": self.found_feasible_solution(),
             "method_call_counts": self.method_call_counts,
             "num_runs": len(self.runs),
         }
