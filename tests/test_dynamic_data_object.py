@@ -74,6 +74,80 @@ class TestDynamicDataObject(unittest.TestCase):
         self.assertEqual(data_loaded.details.status, "active")
         os.remove(tmp_file_path)
 
+    def test_nested_dict_conversion(self):
+        obj = {"a": 1, "b": {"ba": 2, "bb": 3}}
+        data = DynamicDataObject.from_obj(obj)
+
+        # Check top-level attributes
+        self.assertEqual(data.a, 1)
+        self.assertIsInstance(data.b, DynamicDataObject)
+
+        # Check nested attributes
+        self.assertEqual(data.b.ba, 2)
+        self.assertEqual(data.b.bb, 3)
+
+    def test_list_of_dict_conversion(self):
+        obj = [{"id": 1, "value": "a"}, {"id": 2, "value": "b"}]
+        data = DynamicDataObject.from_obj(obj)
+
+        # Check that the result is a list
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+
+        # Check each item in the list
+        self.assertIsInstance(data[0], DynamicDataObject)
+        self.assertEqual(data[0].id, 1)
+        self.assertEqual(data[0].value, "a")
+
+        self.assertIsInstance(data[1], DynamicDataObject)
+        self.assertEqual(data[1].id, 2)
+        self.assertEqual(data[1].value, "b")
+
+    def test_list_of_dict_in_dict_conversion(self):
+        obj = {"items": [{"id": 1, "value": "a"}, {"id": 2, "value": "b"}]}
+        data = DynamicDataObject.from_obj(obj)
+
+        # Check that the result is a DynamicDataObject
+        self.assertIsInstance(data, DynamicDataObject)
+        self.assertIsInstance(data.items, list)
+        self.assertEqual(len(data.items), 2)
+
+        # Check each item in the list
+        self.assertIsInstance(data.items[0], DynamicDataObject)
+        self.assertEqual(data.items[0].id, 1)
+        self.assertEqual(data.items[0].value, "a")
+
+        self.assertIsInstance(data.items[1], DynamicDataObject)
+        self.assertEqual(data.items[1].id, 2)
+        self.assertEqual(data.items[1].value, "b")
+
+    def test_dict_in_list_in_dict_in_list_conversion(self):
+        obj = [
+            {"id": 1, "value": "a", "details": [{"key": "k1", "val": "v1"}]},
+            {"id": 2, "value": "b", "details": [{"key": "k2", "val": "v2"}]},
+        ]
+        data = DynamicDataObject.from_obj(obj)
+        # Check that the result is a list
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        # Check each item in the list
+        self.assertIsInstance(data[0], DynamicDataObject)
+        self.assertEqual(data[0].id, 1)
+        self.assertEqual(data[0].value, "a")
+        self.assertIsInstance(data[0].details, list)
+        self.assertEqual(len(data[0].details), 1)
+        self.assertIsInstance(data[0].details[0], DynamicDataObject)
+        self.assertEqual(data[0].details[0].key, "k1")
+        self.assertEqual(data[0].details[0].val, "v1")
+        self.assertEqual(data[1].id, 2)
+        self.assertEqual(data[1].value, "b")
+        # Check that the result is a DynamicDataObject
+        self.assertIsInstance(data[1].details, list)
+        self.assertEqual(len(data[1].details), 1)
+        self.assertIsInstance(data[1].details[0], DynamicDataObject)
+        self.assertEqual(data[1].details[0].key, "k2")
+        self.assertEqual(data[1].details[0].val, "v2")
+
 
 if __name__ == "__main__":
     unittest.main()

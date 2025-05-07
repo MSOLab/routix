@@ -1,0 +1,17 @@
+[project]
+name = "clad"
+version = "0.0.1"
+description = "CP LNS Algorithm Design"
+readme = "README.md"
+authors = [
+    { name = "JuneTech", email = "junetech0@gmail.com" }
+]
+requires-python = "==3.11.*"
+dependencies = []
+
+[project.scripts]
+clad = "clad:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
