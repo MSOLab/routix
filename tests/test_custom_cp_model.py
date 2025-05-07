@@ -1,66 +1,101 @@
-import unittest
+import pytest
 
-from ortools.sat.python.cp_model import LinearExpr
-
-from clad import CustomCpModel
-
-
-class TestCustomCpModel(unittest.TestCase):
-    def setUp(self):
-        """Set up a CustomCpModel instance for testing."""
-        self.model = CustomCpModel()
-
-    def test_change_domain(self):
-        var = self.model.NewIntVar(0, 10, "x")
-        self.model.change_domain(var, [5, 15])
-        self.assertEqual(var.Proto().domain, [5, 15])
-
-    def test_add_linear_constraint_fast(self):
-        x = self.model.NewIntVar(0, 10, "x")
-        y = self.model.NewIntVar(0, 10, "y")
-        self.model.add_linear_constraint_fast([x, y], [1, 2], (5, 20))
-        constraints = self.model._get_constraints()
-        self.assertEqual(len(constraints), 1)
-        self.assertEqual(constraints[0].linear.vars, [x.Index(), y.Index()])
-        self.assertEqual(constraints[0].linear.coeffs, [1, 2])
-        self.assertEqual(constraints[0].linear.domain, [5, 20])
-
-    def test_add_temporal_linear_constraints(self):
-        x = self.model.NewIntVar(0, 10, "x")
-        y = self.model.NewIntVar(0, 10, "y")
-        args_list = [([x, y], [1, 2], (5, 20)), ([x], [3], (0, 10))]
-        self.model.add_temporal_linear_constraints(args_list)
-        constraints = self.model._get_constraints()
-        self.assertEqual(len(constraints), 2)
-        self.assertEqual(self.model.idx_added_constraints, [(0, 2)])
-
-    def test_add_temporal_abs_equality_constraints(self):
-        x = self.model.NewIntVar(0, 10, "x")
-        expr = LinearExpr.Sum([x])
-        args_list = [(x, expr)]
-        self.model.add_temporal_abs_equality_constraints(args_list)
-        constraints = self.model._get_constraints()
-        self.assertEqual(len(constraints), 1)
-        self.assertEqual(self.model.idx_added_constraints, [(0, 1)])
-
-    def test_delete_constraints(self):
-        x = self.model.NewIntVar(0, 10, "x")
-        y = self.model.NewIntVar(0, 10, "y")
-        self.model.add_linear_constraint_fast([x, y], [1, 2], (5, 20))
-        self.model.delete_constraints(0, 1)
-        constraints = self.model._get_constraints()
-        self.assertEqual(len(constraints), 0)
-
-    def test_delete_added_constraints(self):
-        x = self.model.NewIntVar(0, 10, "x")
-        y = self.model.NewIntVar(0, 10, "y")
-        self.model.add_temporal_linear_constraints([([x, y], [1, 2], (5, 20))])
-        self.model.delete_added_constraints()
-        constraints = self.model._get_constraints()
-        self.assertEqual(len(constraints), 0)
-        self.assertEqual(len(self.model.added_constraints), 0)
-        self.assertEqual(len(self.model.idx_added_constraints), 0)
+from src.clad.cpsat.custom_cp_model import CustomCpModel
+from src.clad.cpsat.status import CpSatStatus
+from src.clad.elapsed_timer import ElapsedTimer
 
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.fixture
+def model():
+    """Fixture to create a CustomCpModel instance."""
+    return CustomCpModel()
+
+
+def test_init_solver(model: CustomCpModel):
+    model.init_solver(computational_time=10.0, n_threads=4)
+    assert model.solver.parameters.max_time_in_seconds == 10.0
+    assert model.solver.parameters.num_workers == 4
+
+
+def test_solve_and_get_status(model: CustomCpModel):
+    model.init_solver(computational_time=10.0, n_threads=4)
+    status, elapsed_time, ub, lb = model.solve_and_get_status(
+        computational_time=10.0, n_threads=4
+    )
+    assert isinstance(status, int)
+    assert isinstance(elapsed_time, float)
+    assert isinstance(ub, float)
+    assert isinstance(lb, float)
+
+
+def test_change_domain(model: CustomCpModel):
+    var = model.new_int_var(0, 10, "test_var")
+    model.change_domain(var, [5, 15])
+    assert var.Proto().domain == [5, 15]
+
+
+def test_is_maximize(model: CustomCpModel):
+    with pytest.raises(RuntimeError, match="Objective function has not been set."):
+        model.is_maximize()
+
+
+def test_freeze_base_constraints(model: CustomCpModel):
+    # Create integer variables
+    x = model.new_int_var(0, 10, "x")
+    y = model.new_int_var(0, 10, "y")
+
+    # Add a constraint
+    model.add(x + y <= 15)
+
+    # Freeze base constraints
+    model.freeze_base_constraints()
+
+    # Assert that the number of base constraints is updated correctly
+    assert model.num_base_constraints == 1
+
+
+def test_delete_added_constraints(model: CustomCpModel):
+    # Create integer variables
+    x = model.new_int_var(0, 10, "x")
+    y = model.new_int_var(0, 10, "y")
+
+    # Add a base constraint and freeze it
+    model.add(x + y <= 15)
+    model.freeze_base_constraints()
+
+    # Add additional constraints
+    model.add(x - y >= 5)  # Added constraint 1
+    model.add(x + 2 * y == 20)  # Added constraint 2
+
+    # Delete added constraints
+    model.delete_added_constraints()
+
+    # Assert that only the base constraints remain
+    assert model.get_next_constr_idx() == model.num_base_constraints
+
+
+def test_solve_with_prog_logger(model: CustomCpModel):
+    timer = ElapsedTimer()
+    model.init_solver(computational_time=10.0, n_threads=4)
+    model.init_callback(timer)
+
+    # Example CP model by Google
+    num_vals = 3
+    x = model.new_int_var(0, num_vals - 1, "x")
+    y = model.new_int_var(0, num_vals - 1, "y")
+    z = model.new_int_var(0, num_vals - 1, "z")
+    model.add(x != y)
+
+    status, elapsed_time, ub, lb = model.solve_with_prog_logger(
+        computational_time=10.0, n_threads=4, timer=timer
+    )
+    assert isinstance(status, int)
+    assert isinstance(elapsed_time, float)
+    assert isinstance(ub, float)
+    assert isinstance(lb, float)
+    if CpSatStatus.found_feasible_solution(status):
+        print(f"x = {model.solver.value(x)}")
+        print(f"y = {model.solver.value(y)}")
+        print(f"z = {model.solver.value(z)}")
+    else:
+        print("No solution found.")

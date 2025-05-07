@@ -1,39 +1,34 @@
 import json
 from pathlib import PurePath
-from typing import Any
+from typing import Any, Self, Sequence
 
 
-class DynamicDataObject(object):
+class DynamicDataObject:
     """
-    A dynamic container for data that assigns attributes from a dictionary.
+    A flexible container that allows dynamic assignment of attributes from nested dictionaries and lists.
 
-    This class enables the dynamic creation of attributes based on a provided dictionary.
-    In addition, the class supports wrapping nested dictionaries and lists into
-    DynamicDataObject instances via the from_obj() class method.
+    This class is designed to:
+    - Wrap arbitrary nested dict/list-based structures into Python objects with dot-access (`obj.key`)
+    - Convert back to plain dict/list structures with `.to_obj()`
+    - Serialize/deserialize from JSON
+    - Be initialized robustly: must be created with a dictionary using `__init__()`,
+      and any nested or list structures should use the classmethods `from_obj()` or `from_json()`
 
-    The constructor expects a dictionary (with valid identifier keys) and transforms
-    each key/value pair into an attribute. For data structured as lists or nested dictionaries,
-    use the from_obj() method to recursively convert them.
-
-    Features:
-    - Dynamic attribute assignment from a dictionary.
-    - Supports conversion of its attributes into plain dictionaries and lists.
-    - Serialization to and deserialization from JSON files.
-    - Recursive transformation of nested dictionaries and lists via from_obj().
-
-    Usage:
-    >>> data = DynamicDataObject({'name': 'John', 'age': 30, 'skills': ['Python', 'JSON']})
-    >>> print(data.name)
-    John
-    >>> data.to_json_file('person.json')
-    >>> loaded_data = DynamicDataObject.from_json_file('person.json')
-
-    Note:
-    This class is particularly useful for working with data from APIs or other sources where
-    the structure might vary or evolve over time. For list-based data, the from_obj() method can be used.
+    Examples:
+    >>> obj = DynamicDataObject({'x': 1, 'y': {'z': 2}})
+    >>> obj.y.z
+    2
+    >>> obj.to_obj()
+    {'x': 1, 'y': {'z': 2}}
     """  # noqa: E501
 
     def __init__(self, param_dict: dict[str, Any]):
+        if not isinstance(param_dict, dict):
+            raise TypeError(
+                "DynamicDataObject must be initialized with a dictionary"
+                f", but got {type(param_dict).__name__}"
+            )
+
         for key, value in param_dict.items():
             # Validate that key is a valid identifier
             if not isinstance(key, str) or not key.isidentifier():
@@ -51,21 +46,41 @@ class DynamicDataObject(object):
         return f"{self.__class__.__name__}({str(self.to_obj())})"
 
     @classmethod
+    def from_sequence(cls, sequence: Sequence[Any]) -> list[Self]:
+        return [cls.from_obj(item) for item in sequence]
+
+    @classmethod
+    def from_dict(cls, dict_of_obj: dict[str, Any]) -> Self:
+        return cls(
+            {
+                key: DynamicDataObject.from_obj(value)
+                for key, value in dict_of_obj.items()
+            }
+        )
+
+    @classmethod
     def from_obj(cls, obj: Any) -> Any:
         """Recursively converts dictionaries and lists into DynamicDataObject instances.
 
         Args:
             obj (Any): dictionary or list or any other object
 
+        Raises:
+            TypeError: If the object is of type bytes.
+
         Returns:
             Any: a class instance
         """
-        if isinstance(obj, dict):
-            return cls(
-                {key: DynamicDataObject.from_obj(value) for key, value in obj.items()}
-            )
-        if isinstance(obj, list):
-            return [DynamicDataObject.from_obj(item) for item in obj]
+        if isinstance(obj, (str, int, float, bool, type(None))):
+            return obj  # Return basic types as-is
+        elif isinstance(obj, bytes):
+            raise TypeError("bytes type is not supported. Please decode or convert it.")
+        elif isinstance(obj, Sequence):  # and not isinstance(obj, (str, bytes)):
+            return cls.from_sequence(obj)
+        elif isinstance(obj, list):
+            return cls.from_sequence(obj)
+        elif isinstance(obj, dict):
+            return cls.from_dict(obj)
         return obj
 
     def to_obj(self) -> Any:

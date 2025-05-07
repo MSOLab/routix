@@ -15,3 +15,16 @@ clad = "clad:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ortools>=9.12.4544",
+    "pytest>=8.3.5",
+    "pyyaml>=6.0.2",
+    "types-pyyaml>=6.0.12.20250402",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"

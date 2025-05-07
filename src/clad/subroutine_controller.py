@@ -1,40 +1,65 @@
-import datetime as dt
+from abc import ABC, abstractmethod
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Sequence
 
 from .dynamic_data_object import DynamicDataObject
-from .timer import Timer
+from .elapsed_timer import ElapsedTimer
+from .experiment_summary import ExperimentSummary
 
 
-class SubroutineController:
-    _timer: Timer
-    _stopping_criteria: DynamicDataObject
+class SubroutineController(ABC):
+    timer: ElapsedTimer
+
+    experiment_summary: ExperimentSummary
+
+    stopping_criteria: DynamicDataObject
     _subroutine_flow: DynamicDataObject
-    _called_routines: list[dict[str, Any]]
+
+    _working_dir_path: Path
+
+    _method_call_logs: list[dict[str, Any]]
 
     def __init__(
         self,
+        name: str,
         stopping_criteria: DynamicDataObject,
         subroutine_flow: DynamicDataObject,
-        start_dt: dt.datetime | None = None,
+        start_dt: datetime | None = None,
     ):
-        self._stopping_criteria = stopping_criteria
+        # Set the timer first
+        self.timer = ElapsedTimer()
+        if start_dt is not None:
+            self.timer.set_start_time(start_dt)
+        else:
+            self.timer.set_start_time_as_now()
+
+        # Set summary
+        self.experiment_summary = ExperimentSummary(name)
+
+        self.stopping_criteria = stopping_criteria
         self._subroutine_flow = subroutine_flow
 
-        self._called_routines = []
-        self._timer = Timer()
-        if start_dt is not None:
-            self._timer.set_start_time(start_dt)
-        else:
-            self._timer.set_start_time_as_now()
+        self._method_call_logs = []
 
+    @abstractmethod
     def is_stopping_condition(self) -> bool:
-        raise NotImplementedError()
+        pass
 
-    def _add_called_routine(self, **kwargs):
-        self._called_routines.append(kwargs)
+    def _add_method_call_log_entry(self, **kwargs):
+        self._method_call_logs.append(kwargs)
+
+    def set_working_dir(self, dir_path: str):
+        self._working_dir_path = Path(dir_path)
 
     def run(self):
         self.execute_routine(self._subroutine_flow)
+        self.post_run_process()
+
+    @abstractmethod
+    def post_run_process(self):
+        """Post-process the results after running the subroutine flow."""
+        pass
 
     def execute_routine(self, routine_data: DynamicDataObject):
         if isinstance(routine_data, Sequence):  # is a list or tuple
@@ -43,14 +68,63 @@ class SubroutineController:
         else:  # is an dict-like object
             if self.is_stopping_condition():
                 return
-            # if the object has a function with the name of subroutine_flow.name, call it
-            if hasattr(routine_data, "name"):
-                try:
-                    self._add_called_routine(**routine_data.to_obj())
-                    getattr(self, routine_data.name)(**routine_data.to_obj())
-                except AttributeError:
-                    raise AttributeError(
-                        f"SubroutineController has no attribute {routine_data.name}"
-                    )
-            else:
-                raise AttributeError("Subroutine data must have a 'name' attribute")
+            kwargs_dict: dict = routine_data.to_obj()
+            method_name = kwargs_dict.pop("method_name")
+            self.call_method(method_name, **kwargs_dict)
+
+    def call_method(self, method_name: str, **kwargs):
+        """Call a method by its name and log the execution time.
+
+        Args:
+            method_name (str): The name of the method to call.
+            **kwargs: Any: Additional keyword arguments to pass to the method.
+
+        Raises:
+            AttributeError: If the method does not exist in the class.
+        """
+        if not hasattr(self, method_name):
+            raise AttributeError(
+                f"{self.__class__.__name__} has no attribute {method_name}"
+            )
+        method_start_sec = self.timer.get_elapsed_sec()
+
+        self.experiment_summary.record_method_call(method_name)
+        try:
+            getattr(self, method_name)(**kwargs)
+        except Exception as e:
+            print(f"[Error] Method {method_name} failed: {e}")
+            self._add_method_call_log_entry(
+                method_name=method_name,
+                start_sec=method_start_sec,
+                elapsed_sec=0,
+                kwargs=kwargs,
+                error=str(e),
+            )
+            raise
+
+        elapsed_sec = self.timer.get_elapsed_sec() - method_start_sec
+        self._add_method_call_log_entry(
+            method_name=method_name,
+            start_sec=method_start_sec,
+            elapsed_sec=elapsed_sec,
+            kwargs=kwargs,
+        )
+
+    def repeat(self, n_repeats: int, routine_data: DynamicDataObject):
+        """
+        Repeat a subroutine flow n_repeats times.
+
+        Args:
+            n_repeats (int): Number of repetitions
+            routine_data (DynamicDataObject): A single subroutine
+                or a list of subroutines
+        """
+        for i in range(n_repeats):
+            if self.is_stopping_condition():
+                print(
+                    f"[Repeat] Stopping condition met at iteration {i+1}/{n_repeats}."
+                )
+                break
+            print(f"[Repeat] Starting repeat {i+1}/{n_repeats}")
+            ddo = DynamicDataObject.from_obj(routine_data)
+            self.execute_routine(ddo)
