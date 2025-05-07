@@ -1,6 +1,6 @@
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from ortools.sat.cp_model_pb2 import ConstraintProto, CpSolverStatus
-from ortools.sat.python.cp_model import Constraint, CpModel, CpSolver, IntVar
+from ortools.sat.python.cp_model import CpModel, CpSolver, IntVar
 
 from ..elapsed_timer import ElapsedTimer
 from .solution_progress_logger import SolutionProgressLogger
@@ -18,18 +18,9 @@ class CustomCpModel(CpModel):
     num_base_constraints: int
     """Number of base constraints in the model."""
 
-    # Added constraints
-
-    added_constraints: list[Constraint]
-    """List of added constraints."""
-    idx_added_constraints: list[tuple[int, int]]
-    """List of tuples representing the indices of the added constraints."""
-
     def __init__(self):
         super().__init__()
         self.num_base_constraints = 0
-        self.added_constraints = []
-        self.idx_added_constraints = []
 
     def solve_and_get_status(
         self, computational_time: float, n_threads: int
@@ -106,9 +97,9 @@ class CustomCpModel(CpModel):
             var (IntVar)
             domain (list[int]): A list of two integers representing the new domain.
         """
-        assert (
-            len(domain) == 2
-        ), f"Domain must be a list of two integers; {domain} given."
+        assert len(domain) == 2, (
+            f"Domain must be a list of two integers; {domain} given."
+        )
 
         var.Proto().domain[:] = domain
 
