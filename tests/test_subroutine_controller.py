@@ -30,7 +30,7 @@ def sample_controller():
     return controller
 
 
-def test_execute_routine(sample_controller):
+def test_execute_routine(sample_controller: SubroutineController):
     sample_controller.run()
     assert len(sample_controller._method_call_logs) == 2
     assert sample_controller._method_call_logs[0]["method_name"] == "sample_method"
@@ -40,7 +40,7 @@ def test_execute_routine(sample_controller):
     }
 
 
-def test_call_method(sample_controller):
+def test_call_method(sample_controller: SubroutineController):
     sample_controller.call_method("sample_method", param1=10, param2=20)
     assert len(sample_controller._method_call_logs) == 1
     assert sample_controller._method_call_logs[0]["method_name"] == "sample_method"
@@ -50,6 +50,6 @@ def test_call_method(sample_controller):
     }
 
 
-def test_repeat(sample_controller):
+def test_repeat(sample_controller: SubroutineController):
     sample_controller.repeat(3, sample_controller._subroutine_flow)
     assert len(sample_controller._method_call_logs) == 6  # 2 methods * 3 repeats
