@@ -4,6 +4,7 @@ from .experiment_summary import ExperimentSummary
 from .solver_output_summary import SolverOutputSummary
 from .solver_status import SolverStatus
 from .subroutine_controller import SubroutineController
+from .subroutine_flow_validator import SubroutineFlowValidator
 
 __all__ = [
     "DynamicDataObject",
@@ -12,4 +13,5 @@ __all__ = [
     "SolverOutputSummary",
     "SolverStatus",
     "SubroutineController",
+    "SubroutineFlowValidator",
 ]

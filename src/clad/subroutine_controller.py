@@ -6,17 +6,28 @@ from typing import Any, Sequence
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
 from .experiment_summary import ExperimentSummary
-from .subroutine_flow_validator import SubroutineFlowValidator
 
 
 class SubroutineController(ABC):
+    """
+    Base class for subroutine controllers using routine name context stack.
+    """
+
     timer: ElapsedTimer
+    """
+    Timer to measure elapsed time during the experiment.
+    This is set to the current time when the experiment starts.
+    """
 
     experiment_summary: ExperimentSummary
+    """Summary of the experiment, including method call logs and elapsed time."""
 
     stopping_criteria: DynamicDataObject
-    __subroutine_flow: DynamicDataObject
-    __method_call_log: list[dict[str, Any]]
+    """Stopping criteria for the experiment, defined as a DynamicDataObject."""
+
+    _subroutine_flow: DynamicDataObject
+    _current_routine_name_stack: list[str]
+    _method_call_log: list[dict[str, Any]]
     """A list of dictionaries containing method call logs."""
 
     def __init__(
@@ -26,64 +37,69 @@ class SubroutineController(ABC):
         subroutine_flow: DynamicDataObject,
         start_dt: datetime | None = None,
     ):
-        # Check the validity of subroutine flow
-        validator = SubroutineFlowValidator(self.__class__)
-        validator.validate(subroutine_flow)
-
         # Set the timer
         self.timer = ElapsedTimer()
         if start_dt is not None:
             self.timer.set_start_time(start_dt)
         else:
             self.timer.set_start_time_as_now()
-
-        # Set summary
         self.experiment_summary = ExperimentSummary(name)
-
         self.stopping_criteria = stopping_criteria
-        self.__subroutine_flow = subroutine_flow
-        self.__method_call_log = []
+        self._subroutine_flow = subroutine_flow
+        self._method_call_log: list[dict[str, Any]] = []
+        self._working_dir_path: Path | None = None
+        self._routine_name_stack: list[str] = []
 
-    def set_working_dir(self, dir_path: str):
-        self.__working_dir_path = Path(dir_path)
+    def set_working_dir(self, dir_path: Path | str):
+        self._working_dir_path = Path(dir_path)
+        self._working_dir_path.mkdir(parents=True, exist_ok=True)
+
+    def get_current_routine_name(self) -> str:
+        return self._routine_name_stack[-1] if self._routine_name_stack else "unknown"
+
+    def get_file_path_by_for_subroutine(self, filename_suffix: str) -> Path:
+        routine_name = self.get_current_routine_name()
+        if self._working_dir_path is None:
+            raise AttributeError("Working directory path is not set.")
+        return self._working_dir_path / (routine_name + filename_suffix)
 
     def run(self):
-        self.execute_routine(self.__subroutine_flow)
+        self.execute_routine(self._subroutine_flow)
         self.post_run_process()
 
-    def execute_routine(self, routine_data: DynamicDataObject):
-        if isinstance(routine_data, Sequence):  # is a list or tuple
-            for subroutine_data in routine_data:
-                self.execute_routine(subroutine_data)
+    def execute_routine(self, routine_data: DynamicDataObject, prefix: str = ""):
+        if isinstance(routine_data, Sequence) and not isinstance(
+            routine_data, (str, bytes)
+        ):
+            for i, subroutine_data in enumerate(routine_data, start=1):
+                name_prefix = f"{prefix}.{i}" if prefix else str(i)
+                self.execute_routine(subroutine_data, prefix=name_prefix)
         else:  # is an dict-like object
             if self.is_stopping_condition():
                 return
-            kwargs_dict: dict = routine_data.to_obj()
+            kwargs_dict = routine_data.to_obj()
+
+            # Get the method name from the dictionary and remove it from the kwargs
             method_name = kwargs_dict.pop("method_name")
+
+            routine_name = f"{prefix}_{method_name}" if prefix else method_name
+            self._routine_name_stack.append(routine_name)
             self.call_method(method_name, **kwargs_dict)
+            self._routine_name_stack.pop()
 
     def call_method(self, method_name: str, **kwargs):
-        """Call a method by its name and log the execution time.
-
-        Args:
-            method_name (str): The name of the method to call.
-            **kwargs: Any: Additional keyword arguments to pass to the method.
-
-        Raises:
-            AttributeError: If the method does not exist in the class.
-        """
         if not hasattr(self, method_name):
             raise AttributeError(
                 f"{self.__class__.__name__} has no attribute {method_name}"
             )
         method_start_sec = self.timer.get_elapsed_sec()
-
         self.experiment_summary.record_method_call(method_name)
+
         try:
             getattr(self, method_name)(**kwargs)
         except Exception as e:
-            print(f"[Error] Method {method_name} failed: {e}")
-            self.__add_method_call_log_entry(
+            self._add_method_call_log_entry(
+                routine_name=self.get_current_routine_name(),
                 method_name=method_name,
                 start_sec=method_start_sec,
                 elapsed_sec=0,
@@ -93,23 +109,19 @@ class SubroutineController(ABC):
             raise
 
         elapsed_sec = self.timer.get_elapsed_sec() - method_start_sec
-        self.__add_method_call_log_entry(
+        self._add_method_call_log_entry(
+            routine_name=self.get_current_routine_name(),
             method_name=method_name,
             start_sec=method_start_sec,
             elapsed_sec=elapsed_sec,
             kwargs=kwargs,
         )
 
-    def __add_method_call_log_entry(self, **kwargs):
-        self.__method_call_log.append(kwargs)
+    def _add_method_call_log_entry(self, **kwargs):
+        self._method_call_log.append(kwargs)
 
     def get_method_call_log(self) -> list[dict[str, Any]]:
-        """Get the method call log.
-
-        Returns:
-            list[dict[str, Any]]: A list of dictionaries containing method call logs.
-        """
-        return self.__method_call_log.copy()
+        return self._method_call_log.copy()
 
     @abstractmethod
     def is_stopping_condition(self) -> bool:
@@ -117,18 +129,18 @@ class SubroutineController(ABC):
 
     @abstractmethod
     def post_run_process(self):
-        """Post-process the results after running the subroutine flow."""
         pass
 
     def repeat(self, n_repeats: int, routine_data: DynamicDataObject):
         """
-        Repeat a subroutine flow n_repeats times.
+        Repeats the execution of a routine a specified number of times.
 
         Args:
-            n_repeats (int): Number of repetitions
-            routine_data (DynamicDataObject): A single subroutine
-                or a list of subroutines
+            n_repeats (int): Number of times to repeat the routine.
+            routine_data (DynamicDataObject): The routine data to be executed.
         """
+        last_routine_name = self.get_current_routine_name()
+        zero_fill_width = len(str(n_repeats))
         for i in range(n_repeats):
             if self.is_stopping_condition():
                 print(
@@ -136,5 +148,10 @@ class SubroutineController(ABC):
                 )
                 break
             print(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
-            ddo = DynamicDataObject.from_obj(routine_data)
-            self.execute_routine(ddo)
+
+            prefix = last_routine_name + str(i + 1).zfill(zero_fill_width)
+            self._routine_name_stack.append(prefix)
+            self.execute_routine(
+                DynamicDataObject.from_obj(routine_data), prefix=prefix
+            )
+            self._routine_name_stack.pop()

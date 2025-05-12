@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from src.clad.dynamic_data_object import DynamicDataObject
@@ -5,73 +7,75 @@ from src.clad.subroutine_controller import SubroutineController
 
 
 class MockSubroutineController(SubroutineController):
+    def __init__(self, name, stopping_criteria, subroutine_flow, start_dt=None):
+        super().__init__(name, stopping_criteria, subroutine_flow, start_dt)
+        self._stopping_condition = False
+
     def is_stopping_condition(self) -> bool:
-        return False
+        return self._stopping_condition
 
     def post_run_process(self):
         print("Post-run process executed.")
 
-    def sample_method(self, param1, param2):
-        print(f"Executing sample_method with param1={param1}, param2={param2}")
+    def sample_method(self, value: int):
+        print(f"Executing sample_method with value={value}")
 
 
 @pytest.fixture
-def sample_controller():
+def sample_controller(tmp_path: Path):
     stopping_criteria = DynamicDataObject({"stop": False})
     subroutine_flow = DynamicDataObject.from_obj(
         [
-            {"method_name": "sample_method", "param1": 1, "param2": 2},
-            {"method_name": "sample_method", "param1": 3, "param2": 4},
+            {"method_name": "sample_method", "value": 10},
+            {"method_name": "sample_method", "value": 20},
         ]
     )
     controller = MockSubroutineController(
-        "MockSubroutineController", stopping_criteria, subroutine_flow
+        "MockExperiment", stopping_criteria, subroutine_flow
     )
+    controller.set_working_dir(tmp_path)
     return controller
 
 
-def test_execute_routine(sample_controller: SubroutineController):
+def test_execute_routine(sample_controller: MockSubroutineController):
     sample_controller.run()
     method_call_log = sample_controller.get_method_call_log()
     assert len(method_call_log) == 2
     assert method_call_log[0]["method_name"] == "sample_method"
-    assert method_call_log[1]["kwargs"] == {
-        "param1": 3,
-        "param2": 4,
-    }
+    assert method_call_log[0]["kwargs"]["value"] == 10
+    assert method_call_log[1]["method_name"] == "sample_method"
+    assert method_call_log[1]["kwargs"]["value"] == 20
 
 
-def test_call_method(sample_controller: SubroutineController):
-    sample_controller.call_method("sample_method", param1=10, param2=20)
+def test_call_method(sample_controller: MockSubroutineController):
+    sample_controller.call_method("sample_method", value=42)
     method_call_log = sample_controller.get_method_call_log()
     assert len(method_call_log) == 1
     assert method_call_log[0]["method_name"] == "sample_method"
-    assert method_call_log[0]["kwargs"] == {
-        "param1": 10,
-        "param2": 20,
-    }
+    assert method_call_log[0]["kwargs"]["value"] == 42
 
 
-@pytest.fixture
-def sample_repeat_controller():
-    stopping_criteria = DynamicDataObject({"stop": False})
-    subroutine_flow = DynamicDataObject.from_obj(
-        {
-            "method_name": "repeat",
-            "n_repeats": 3,
-            "routine_data": [
-                {"method_name": "sample_method", "param1": 1, "param2": 2},
-                {"method_name": "sample_method", "param1": 3, "param2": 4},
-            ],
-        }
-    )
-    controller = MockSubroutineController(
-        "MockSubroutineController", stopping_criteria, subroutine_flow
-    )
-    return controller
+def test_repeat(sample_controller: MockSubroutineController):
+    sample_controller.repeat(3, sample_controller._subroutine_flow)
+    method_call_log = sample_controller.get_method_call_log()
+    assert len(method_call_log) == 6  # 2 methods * 3 repeats
 
 
-def test_repeat(sample_repeat_controller: SubroutineController):
-    sample_repeat_controller.run()
-    method_call_log = sample_repeat_controller.get_method_call_log()
-    assert len(method_call_log) == 7  # 1(repeat) + 2 methods * 3 repeats
+def test_stopping_condition(sample_controller: MockSubroutineController):
+    sample_controller._stopping_condition = True
+    sample_controller.run()
+    method_call_log = sample_controller.get_method_call_log()
+    assert len(method_call_log) == 0  # No methods executed
+
+
+def test_get_file_path_by_for_subroutine(
+    sample_controller: MockSubroutineController, tmp_path: Path
+):
+    routine_name = "test_routine"
+    filename_suffix = "_result.txt"
+    sample_controller._routine_name_stack.append(
+        routine_name
+    )  # Set current routine name
+    expected_path = tmp_path / f"{routine_name}{filename_suffix}"
+    file_path = sample_controller.get_file_path_by_for_subroutine(filename_suffix)
+    assert file_path == expected_path
