@@ -7,7 +7,7 @@ authors = [
     { name = "JuneTech", email = "junetech0@gmail.com" }
 ]
 license = "MIT"
-requires-python = "==3.11.*"
+requires-python = ">=3.11"
 dependencies = []
 
 [project.urls]
