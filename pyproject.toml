@@ -1,16 +1,17 @@
 [project]
-name = "clad"
+name = "routix"
 version = "0.0.2"
-description = "CP LNS Algorithm Design"
+description = "Define routines as structured algorithmic workflows"
 readme = "README.md"
 authors = [
     { name = "JuneTech", email = "junetech0@gmail.com" }
 ]
+license = "MIT"
 requires-python = "==3.11.*"
 dependencies = []
 
-[project.scripts]
-clad = "clad:main"
+[project.urls]
+Repository = "https://github.com/junetech/routix.git"
 
 [build-system]
 requires = ["hatchling"]
@@ -18,7 +19,6 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "ortools>=9.12.4544",
     "pytest>=8.3.5",
     "pyyaml>=6.0.2",
     "types-pyyaml>=6.0.12.20250402",

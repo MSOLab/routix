@@ -2,8 +2,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-import yaml
-
 from .solver_output_summary import SolverOutputSummary
 from .solver_status import SolverStatus
 
@@ -138,14 +136,18 @@ class ExperimentSummary:
         else:
             best = self.get_summary_minimum_obj()
 
+        first_summary = self.get_first_summary()
+        if first_summary:
+            first_obj = first_summary.objective_value
+        else:
+            first_obj = best.objective_value if best else None
+
         return {
             "instance_name": self.name,
             "total_elapsed_time": self.get_total_elapsed_time(),
-            "status": best.status if self.runs else None,
-            "first_obj": self.get_first_summary().objective_value
-            if self.runs
-            else None,
-            "best_obj": best.objective_value if self.runs else None,
+            "status": best.status if best else None,
+            "first_obj": first_obj,
+            "best_obj": best.objective_value if best else None,
             "improvement_ratio": self.get_improvement_ratio(),
             "is_feasible": self.found_feasible_solution(),
             "method_call_counts": self.method_call_counts,
@@ -155,6 +157,8 @@ class ExperimentSummary:
     def save_as_yaml(self, file_path: Path) -> None:
         """Saves the summary to a YAML file."""
         try:
+            import yaml
+
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(self.to_dict(), f, sort_keys=False, allow_unicode=True)

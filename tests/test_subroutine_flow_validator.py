@@ -1,7 +1,7 @@
 import pytest
 
-from src.clad.dynamic_data_object import DynamicDataObject
-from src.clad.subroutine_flow_validator import SubroutineFlowValidator
+from src.routix.dynamic_data_object import DynamicDataObject
+from src.routix.subroutine_flow_validator import SubroutineFlowValidator
 
 
 # 간단한 Mock 클래스 정의

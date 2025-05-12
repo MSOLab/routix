@@ -1,6 +1,6 @@
 import pytest
 
-from src.clad.dynamic_data_object import DynamicDataObject
+from src.routix.dynamic_data_object import DynamicDataObject
 
 
 def test_non_dict_initialization_raises_type_error():

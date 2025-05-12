@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from src.clad.dynamic_data_object import DynamicDataObject
-from src.clad.subroutine_controller import SubroutineController
+from src.routix.dynamic_data_object import DynamicDataObject
+from src.routix.subroutine_controller import SubroutineController
 
 
 class MockSubroutineController(SubroutineController):
