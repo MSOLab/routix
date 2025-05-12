@@ -1,8 +1,10 @@
+from typing import Optional
+
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from ortools.sat.cp_model_pb2 import ConstraintProto, CpSolverStatus
 from ortools.sat.python.cp_model import CpModel, CpSolver, IntVar
 
-from ..elapsed_timer import ElapsedTimer
+from ..routix import ElapsedTimer
 from .solution_progress_logger import SolutionProgressLogger
 from .status import CpSatStatus
 
@@ -65,10 +67,29 @@ class CustomCpModel(CpModel):
         self.solver.parameters.num_workers = n_threads
 
     def solve_with_prog_logger(
-        self, computational_time: float, n_threads: int, timer: ElapsedTimer
-    ) -> tuple[CpSolverStatus, float, float, float]:
+        self,
+        computational_time: float,
+        n_threads: int,
+        timer: Optional[ElapsedTimer] = None,
+    ) -> tuple[str, float, float, float]:
+        """Solve the CP model with a solution progress logger.
+
+        Args:
+            computational_time (float): The maximum computational time in seconds.
+            n_threads (int): The number of threads to use for solving.
+            timer (Optional[ElapsedTimer], optional): Timer to be passed to solver callback. Defaults to None.
+
+        Returns:
+            tuple[str, float, float, float]: A tuple containing
+            - the solver status as a string defined in SolverStatus,
+            - elapsed time in seconds,
+            - the upper bound of the objective function, and
+            - the lower bound of the objective function.
+        """  # noqa: E501
         self.init_solver(computational_time, n_threads)
-        self.init_callback(timer)
+        self.sol_prog_logger = SolutionProgressLogger(
+            timer, print_on_solution_callback=True
+        )
 
         solver_status = self.solver.solve(self, solution_callback=self.sol_prog_logger)
         elapsed_time = self.solver.wall_time
@@ -81,11 +102,11 @@ class CustomCpModel(CpModel):
                 self.is_maximize()
             )
 
-        return solver_status, elapsed_time, obj_value, obj_bound
-
-    def init_callback(self, timer: ElapsedTimer) -> None:
-        self.sol_prog_logger = SolutionProgressLogger(
-            timer, print_on_solution_callback=True
+        return (
+            CpSatStatus.get_status_string(solver_status),
+            elapsed_time,
+            obj_value,
+            obj_bound,
         )
 
     # variable functions

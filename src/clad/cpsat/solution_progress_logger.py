@@ -1,6 +1,8 @@
+from typing import Optional
+
 from ortools.sat.python import cp_model
 
-from ..elapsed_timer import ElapsedTimer
+from ..routix import ElapsedTimer
 
 
 class SolutionProgressLogger(cp_model.CpSolverSolutionCallback):
@@ -30,11 +32,17 @@ class SolutionProgressLogger(cp_model.CpSolverSolutionCallback):
     __print_on_solution_callback: bool
 
     def __init__(
-        self, elapsed_timer: ElapsedTimer, print_on_solution_callback: bool = False
+        self,
+        elapsed_timer: Optional[ElapsedTimer] = None,
+        print_on_solution_callback: bool = False,
     ) -> None:
         super().__init__()
-        self.__elapsed_timer = elapsed_timer
         self.__log = []
+        if elapsed_timer is None:
+            self.__elapsed_timer = ElapsedTimer()
+            self.__elapsed_timer.set_start_time_as_now()
+        else:
+            self.__elapsed_timer = elapsed_timer
         self.__print_on_solution_callback = print_on_solution_callback
 
     def is_verbose(self) -> bool:

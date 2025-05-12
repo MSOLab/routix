@@ -31,10 +31,10 @@ class SolverStatus:
         """Checks if a feasible solution was found based on the status string."""
         return status in {SolverStatus.FEASIBLE, SolverStatus.OPTIMAL}
 
-    # @staticmethod
-    # def is_optimal_solution(status: str) -> bool:
-    #     """Checks if the given status represents an optimal solution."""
-    #     return status == SolverStatus.OPTIMAL
+    @staticmethod
+    def is_optimal_solution(status: str) -> bool:
+        """Checks if the given status represents an optimal solution."""
+        return status == SolverStatus.OPTIMAL
 
     @staticmethod
     def is_unknown(status: str) -> bool:

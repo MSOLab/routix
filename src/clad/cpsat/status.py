@@ -8,7 +8,7 @@ from ortools.sat.python.cp_model import (
     UNKNOWN,
 )
 
-from ..solver_status import SolverStatus
+from ..routix import SolverStatus
 
 
 class CpSatStatus:
