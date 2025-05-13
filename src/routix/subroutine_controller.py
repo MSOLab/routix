@@ -6,6 +6,7 @@ from typing import Any, Sequence
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
 from .experiment_summary import ExperimentSummary
+from .utils import parse_step
 
 
 class SubroutineController(ABC):
@@ -57,7 +58,7 @@ class SubroutineController(ABC):
     def get_current_routine_name(self) -> str:
         return self._routine_name_stack[-1] if self._routine_name_stack else "unknown"
 
-    def get_file_path_by_for_subroutine(self, filename_suffix: str) -> Path:
+    def get_file_path_for_subroutine(self, filename_suffix: str) -> Path:
         routine_name = self.get_current_routine_name()
         if self._working_dir_path is None:
             raise AttributeError("Working directory path is not set.")
@@ -77,10 +78,8 @@ class SubroutineController(ABC):
         else:  # is an dict-like object
             if self.is_stopping_condition():
                 return
-            kwargs_dict = routine_data.to_obj()
 
-            # Get the method name from the dictionary and remove it from the kwargs
-            method_name = kwargs_dict.pop("method_name")
+            method_name, kwargs_dict = parse_step(routine_data)
 
             routine_name = f"{prefix}_{method_name}" if prefix else method_name
             self._routine_name_stack.append(routine_name)
@@ -100,7 +99,7 @@ class SubroutineController(ABC):
         except Exception as e:
             self._add_method_call_log_entry(
                 routine_name=self.get_current_routine_name(),
-                method_name=method_name,
+                method=method_name,
                 start_sec=method_start_sec,
                 elapsed_sec=0,
                 kwargs=kwargs,
@@ -111,7 +110,7 @@ class SubroutineController(ABC):
         elapsed_sec = self.timer.get_elapsed_sec() - method_start_sec
         self._add_method_call_log_entry(
             routine_name=self.get_current_routine_name(),
-            method_name=method_name,
+            method=method_name,
             start_sec=method_start_sec,
             elapsed_sec=elapsed_sec,
             kwargs=kwargs,

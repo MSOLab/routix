@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from src.routix.constants import SubroutineFlowKeys
 from src.routix.dynamic_data_object import DynamicDataObject
 from src.routix.subroutine_controller import SubroutineController
 
@@ -26,8 +27,8 @@ def sample_controller(tmp_path: Path):
     stopping_criteria = DynamicDataObject({"stop": False})
     subroutine_flow = DynamicDataObject.from_obj(
         [
-            {"method_name": "sample_method", "value": 10},
-            {"method_name": "sample_method", "value": 20},
+            {SubroutineFlowKeys.METHOD: "sample_method", "value": 10},
+            {SubroutineFlowKeys.METHOD: "sample_method", "value": 20},
         ]
     )
     controller = MockSubroutineController(
@@ -41,9 +42,9 @@ def test_execute_routine(sample_controller: MockSubroutineController):
     sample_controller.run()
     method_call_log = sample_controller.get_method_call_log()
     assert len(method_call_log) == 2
-    assert method_call_log[0]["method_name"] == "sample_method"
+    assert method_call_log[0][SubroutineFlowKeys.METHOD] == "sample_method"
     assert method_call_log[0]["kwargs"]["value"] == 10
-    assert method_call_log[1]["method_name"] == "sample_method"
+    assert method_call_log[1][SubroutineFlowKeys.METHOD] == "sample_method"
     assert method_call_log[1]["kwargs"]["value"] == 20
 
 
@@ -51,7 +52,7 @@ def test_call_method(sample_controller: MockSubroutineController):
     sample_controller.call_method("sample_method", value=42)
     method_call_log = sample_controller.get_method_call_log()
     assert len(method_call_log) == 1
-    assert method_call_log[0]["method_name"] == "sample_method"
+    assert method_call_log[0][SubroutineFlowKeys.METHOD] == "sample_method"
     assert method_call_log[0]["kwargs"]["value"] == 42
 
 
@@ -68,7 +69,7 @@ def test_stopping_condition(sample_controller: MockSubroutineController):
     assert len(method_call_log) == 0  # No methods executed
 
 
-def test_get_file_path_by_for_subroutine(
+def test_get_file_path_for_subroutine(
     sample_controller: MockSubroutineController, tmp_path: Path
 ):
     routine_name = "test_routine"
@@ -77,5 +78,5 @@ def test_get_file_path_by_for_subroutine(
         routine_name
     )  # Set current routine name
     expected_path = tmp_path / f"{routine_name}{filename_suffix}"
-    file_path = sample_controller.get_file_path_by_for_subroutine(filename_suffix)
+    file_path = sample_controller.get_file_path_for_subroutine(filename_suffix)
     assert file_path == expected_path
