@@ -8,8 +8,8 @@ from src.routix.subroutine_controller import SubroutineController
 
 
 class MockSubroutineController(SubroutineController):
-    def __init__(self, name, stopping_criteria, subroutine_flow, start_dt=None):
-        super().__init__(name, stopping_criteria, subroutine_flow, start_dt)
+    def __init__(self, name, subroutine_flow, stopping_criteria, start_dt=None):
+        super().__init__(name, subroutine_flow, stopping_criteria, start_dt)
         self._stopping_condition = False
 
     def is_stopping_condition(self) -> bool:
@@ -32,7 +32,7 @@ def sample_controller(tmp_path: Path):
         ]
     )
     controller = MockSubroutineController(
-        "MockExperiment", stopping_criteria, subroutine_flow
+        "MockExperiment", subroutine_flow, stopping_criteria
     )
     controller.set_working_dir(tmp_path)
     return controller

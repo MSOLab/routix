@@ -23,8 +23,8 @@ class SubroutineController(ABC):
     experiment_summary: ExperimentSummary
     """Summary of the experiment, including method call logs and elapsed time."""
 
-    stopping_criteria: DynamicDataObject
-    """Stopping criteria for the experiment, defined as a DynamicDataObject."""
+    stopping_criteria: Any
+    """Stopping criteria for the experiment."""
 
     _subroutine_flow: DynamicDataObject
     _current_routine_name_stack: list[str]
@@ -34,8 +34,8 @@ class SubroutineController(ABC):
     def __init__(
         self,
         name: str,
-        stopping_criteria: DynamicDataObject,
         subroutine_flow: DynamicDataObject,
+        stopping_criteria: Any,
         start_dt: datetime | None = None,
     ):
         # Set the timer
@@ -45,8 +45,9 @@ class SubroutineController(ABC):
         else:
             self.timer.set_start_time_as_now()
         self.experiment_summary = ExperimentSummary(name)
-        self.stopping_criteria = stopping_criteria
         self._subroutine_flow = subroutine_flow
+        self.stopping_criteria = stopping_criteria
+
         self._method_call_log: list[dict[str, Any]] = []
         self._working_dir_path: Path | None = None
         self._routine_name_stack: list[str] = []
