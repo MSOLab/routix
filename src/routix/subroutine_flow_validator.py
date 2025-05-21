@@ -102,7 +102,7 @@ def is_static_or_instance_method(cls: type, method_name: str) -> bool:
 
     Args:
         cls (type): The class to inspect.
-        name (str): The name of the method to check.
+        method_name (str): The name of the method to check.
 
     Returns:
         bool: True if the attribute is a valid static or instance method.
@@ -121,14 +121,15 @@ def is_static_or_instance_method(cls: type, method_name: str) -> bool:
         return False
 
     attr = inspect.getattr_static(cls, method_name)
-
-    # Check if the attribute is callable (e.g., a callable object)
-    if callable(getattr(cls, method_name)):
-        if isinstance(attr, staticmethod):
-            return True
-        if inspect.isfunction(attr):
-            return True  # Regular instance method
-
+    # Static method
+    if isinstance(attr, staticmethod):
+        return True
+    # Regular instance method
+    if inspect.isfunction(attr):
+        return True
+    # Also check if the actual instance is callable (e.g., objects implementing __call__)
+    if callable(getattr(cls, method_name, None)):
+        return True
     return False
 
 
@@ -136,17 +137,19 @@ def get_list_of_missing_required_arguments(
     cls: type, method_name: str, kwargs_dict: dict[str, DynamicDataObject]
 ) -> list[str]:
     """
-    Check if all arguments in the kwargs_dict are present in the method's signature.
+    Get a list of arguments in the kwargs_dict are not in the method's signature.
 
     Args:
-        method (callable): The method to check.
+        cls (type): The class to inspect.
+        method_name (str): The name of the method to check.
         kwargs_dict (dict[str, DynamicDataObject]): The dictionary of keyword arguments.
 
     Returns:
-        bool: True if all arguments are present, False otherwise.
+        list[str]: A list of missing required arguments.
     """
     method = getattr(cls, method_name)
-
+    if not callable(method):
+        raise TypeError(f"'{method_name}' is not a callable object")
     sig = inspect.signature(method)
     required_args = [
         param.name
