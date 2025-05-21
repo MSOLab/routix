@@ -27,9 +27,10 @@ class SubroutineController(ABC):
     """Stopping criteria for the experiment."""
 
     _subroutine_flow: DynamicDataObject
-    _current_routine_name_stack: list[str]
     _method_call_log: list[dict[str, Any]]
     """A list of dictionaries containing method call logs."""
+    _routine_name_stack: list[str]
+    """Stack of routine names to keep track of the current context."""
 
     def __init__(
         self,
@@ -48,9 +49,9 @@ class SubroutineController(ABC):
         self._subroutine_flow = subroutine_flow
         self.stopping_criteria = stopping_criteria
 
-        self._method_call_log: list[dict[str, Any]] = []
         self._working_dir_path: Path | None = None
-        self._routine_name_stack: list[str] = []
+        self._routine_name_stack = []
+        self._method_call_log = []
 
     def set_working_dir(self, dir_path: Path | str):
         self._working_dir_path = Path(dir_path)
@@ -149,7 +150,7 @@ class SubroutineController(ABC):
                 break
             print(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
 
-            prefix = last_routine_name + str(i + 1).zfill(zero_fill_width)
+            prefix = f"{last_routine_name}-{str(i + 1).zfill(zero_fill_width)}"
             self._routine_name_stack.append(prefix)
             self.execute_routine(
                 DynamicDataObject.from_obj(routine_data), prefix=prefix
