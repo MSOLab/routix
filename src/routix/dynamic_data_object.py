@@ -51,12 +51,7 @@ class DynamicDataObject:
 
     @classmethod
     def from_dict(cls, dict_of_obj: dict[str, Any]) -> Self:
-        return cls(
-            {
-                key: DynamicDataObject.from_obj(value)
-                for key, value in dict_of_obj.items()
-            }
-        )
+        return cls({key: cls.from_obj(value) for key, value in dict_of_obj.items()})
 
     @classmethod
     def from_obj(cls, obj: Any) -> Any:
@@ -75,12 +70,12 @@ class DynamicDataObject:
             return obj  # Return basic types as-is
         elif isinstance(obj, bytes):
             raise TypeError("bytes type is not supported. Please decode or convert it.")
-        elif isinstance(obj, Sequence):  # and not isinstance(obj, (str, bytes)):
-            return cls.from_sequence(obj)
         elif isinstance(obj, list):
             return cls.from_sequence(obj)
         elif isinstance(obj, dict):
             return cls.from_dict(obj)
+        elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes, list)):
+            return cls.from_sequence(obj)
         return obj
 
     def to_obj(self) -> Any:
