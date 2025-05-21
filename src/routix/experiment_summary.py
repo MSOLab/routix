@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from .solver_output_summary import SolverOutputSummary
 from .solver_status import SolverStatus
@@ -68,7 +68,7 @@ class ExperimentSummary:
         return min(
             feasible_runs,
             key=lambda run: run.objective_value
-            if run.objective_value
+            if run.objective_value is not None
             else float("inf"),
         )
 
@@ -81,7 +81,7 @@ class ExperimentSummary:
         return max(
             feasible_runs,
             key=lambda run: run.objective_value
-            if run.objective_value
+            if run.objective_value is not None
             else float("-inf"),
         )
 
@@ -102,10 +102,20 @@ class ExperimentSummary:
         else:
             best = self.get_summary_minimum_obj()
 
-        if not (first and best and first.objective_value and best.objective_value):
+        if not (
+            first
+            and best
+            and first.objective_value is not None
+            and best.objective_value is not None
+        ):
             return None
         if first.objective_value == 0:
             return None
+
+        if is_maximize:
+            return (
+                best.objective_value - first.objective_value
+            ) / first.objective_value
         return (first.objective_value - best.objective_value) / first.objective_value
 
     def report(self, is_maximize: bool = False) -> None:
@@ -119,7 +129,7 @@ class ExperimentSummary:
         print(f"Final status: {best.status if best else 'N/A'}")
         print(f"Final objective: {best.objective_value if best else 'N/A'}")
 
-        ratio = self.get_improvement_ratio()
+        ratio = self.get_improvement_ratio(is_maximize)
         print(
             f"Improvement ratio: {ratio:.2%}"
             if ratio is not None
@@ -130,7 +140,7 @@ class ExperimentSummary:
             print(f"{method}: {count} calls")
         print("====================================\n")
 
-    def to_dict(self, is_maximize: bool = False) -> dict:
+    def to_dict(self, is_maximize: bool = False) -> dict[str, Any]:
         if is_maximize:
             best = self.get_summary_maximum_obj()
         else:
@@ -148,19 +158,23 @@ class ExperimentSummary:
             "status": best.status if best else None,
             "first_obj": first_obj,
             "best_obj": best.objective_value if best else None,
-            "improvement_ratio": self.get_improvement_ratio(),
-            "is_feasible": self.found_feasible_solution(),
+            "improvement_ratio": self.get_improvement_ratio(is_maximize),
+            "is_feasible": self.found_feasible_solution(is_maximize),
             "method_call_counts": self.method_call_counts,
             "num_runs": len(self.runs),
         }
 
     def save_as_yaml(self, file_path: Path) -> None:
         """Saves the summary to a YAML file."""
-        try:
-            import yaml
+        import yaml
 
+        try:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(self.to_dict(), f, sort_keys=False, allow_unicode=True)
+        except yaml.YAMLError as e:
+            raise RuntimeError(
+                f"YAML error while saving ExperimentSummary to {file_path}: {e}"
+            )
         except Exception as e:
             raise RuntimeError(f"Error saving ExperimentSummary to {file_path}: {e}")
