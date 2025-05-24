@@ -1,5 +1,5 @@
 import json
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import Any, Self, Sequence
 
 
@@ -120,17 +120,61 @@ class DynamicDataObject:
         except json.JSONDecodeError as e:
             raise ValueError(f"Error parsing JSON from file {file_path}: {e}")
 
-    def to_json(self, file_path: PurePath) -> None:
+    def to_json(self, file_path: Path) -> None:
         """Serializes the object's data to a JSON file at the specified file path.
 
         Args:
             file_path (PurePath)
         """
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             with open(file_path, "w", encoding="utf-8") as writer:
                 json.dump(self.to_obj(), writer, indent=2, ensure_ascii=False)
         except (IOError, OSError) as e:
             raise RuntimeError(f"Error writing to file {file_path}: {e}")
+
+    def save_as_yaml(self, file_path: Path) -> None:
+        """Serializes the object's data to a YAML file at the specified file path.
+
+        Args:
+            file_path (PurePath)
+        """
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            import yaml  # Import here to avoid dependency issues
+
+            with open(file_path, "w", encoding="utf-8") as writer:
+                yaml.safe_dump(self.to_obj(), writer, default_flow_style=False)
+        except (IOError, OSError) as e:
+            raise RuntimeError(f"Error writing to file {file_path}: {e}")
+        except ImportError:
+            raise ImportError("YAML support requires PyYAML to be installed.")
+
+
+def save_ddo_as_yaml(ddo_ins: Any, file_path: Path) -> None:
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(ddo_ins, list):
+        # List of DDO instances - convert each to dict
+        data_to_save = [
+            item.to_obj() if isinstance(item, DynamicDataObject) else item
+            for item in ddo_ins
+        ]
+    elif isinstance(ddo_ins, DynamicDataObject):
+        # Single DDO instance
+        data_to_save = ddo_ins.to_obj()
+    else:
+        # Other types - save as is
+        data_to_save = ddo_ins
+
+    try:
+        import yaml  # Import here to avoid dependency issues
+
+        with open(file_path, "w", encoding="utf-8") as writer:
+            yaml.safe_dump(data_to_save, writer, default_flow_style=False)
+    except (IOError, OSError) as e:
+        raise RuntimeError(f"Error writing to file {file_path}: {e}")
+    except ImportError:
+        raise ImportError("YAML support requires PyYAML to be installed.")
 
 
 def main():
