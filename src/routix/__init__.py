@@ -1,4 +1,4 @@
-from .dynamic_data_object import DynamicDataObject
+from .dynamic_data_object import DynamicDataObject, save_ddo_as_yaml
 from .elapsed_timer import ElapsedTimer
 from .experiment_summary import ExperimentSummary
 from .solver_output_summary import SolverOutputSummary
@@ -8,6 +8,7 @@ from .subroutine_flow_validator import SubroutineFlowValidator
 
 __all__ = [
     "DynamicDataObject",
+    "save_ddo_as_yaml",
     "ElapsedTimer",
     "ExperimentSummary",
     "SolverOutputSummary",
