@@ -28,7 +28,7 @@ class ExperimentSummary:
         ...     )
         ... )
         >>> summary.report()
-        >>> summary.save_as_yaml(Path("logs/summary_instance_42.yaml"))
+        >>> summary.to_yaml(Path("logs/summary_instance_42.yaml"))
     """
 
     name: str
@@ -164,7 +164,7 @@ class ExperimentSummary:
             "num_runs": len(self.runs),
         }
 
-    def save_as_yaml(self, file_path: Path) -> None:
+    def to_yaml(self, file_path: Path) -> None:
         """Saves the summary to a YAML file."""
         import yaml
 
