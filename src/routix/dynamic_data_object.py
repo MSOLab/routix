@@ -1,6 +1,8 @@
 import json
 from pathlib import Path, PurePath
-from typing import Any, Self, Sequence
+from typing import Any, Sequence
+
+from typing_extensions import Self
 
 
 class DynamicDataObject:
