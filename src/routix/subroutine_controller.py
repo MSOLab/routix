@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generic, Sequence, TypeVar
+from typing import Any, Generic, Optional, Sequence, TypeVar
 
 from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
@@ -34,6 +34,9 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
     _routine_name_stack: list[str]
     """Stack of routine names to keep track of the current context."""
 
+    _random_seed: Optional[int]
+    """Random seed for reproducibility."""
+
     def __init__(
         self,
         name: str,
@@ -54,6 +57,8 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         self._working_dir_path: Path | None = None
         self._routine_name_stack = []
         self._method_call_log = []
+
+        self._random_seed = None
 
     def set_working_dir(self, dir_path: Path | str):
         """
@@ -138,6 +143,28 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
     @abstractmethod
     def post_run_process(self):
         pass
+
+    def set_random_seed(self, seed: int):
+        """
+        Sets the random seed for reproducibility.
+
+        Args:
+            seed (int): The seed value to set.
+        """
+        import random
+
+        self._random_seed = seed
+        random.seed(seed)
+
+    @property
+    def random_seed(self) -> Optional[int]:
+        """
+        Returns the current random seed.
+
+        Returns:
+            Optional[int]: The random seed if set, otherwise None.
+        """
+        return self._random_seed
 
     def repeat(self, n_repeats: int, routine_data: DynamicDataObject):
         """
