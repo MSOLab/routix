@@ -3,7 +3,6 @@ from collections.abc import Sequence
 
 from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
-from .utils import parse_step
 
 
 class SubroutineFlowValidator:
@@ -38,7 +37,7 @@ class SubroutineFlowValidator:
                 return
 
             # Check if the method name is a string
-            method_name, kwargs_dict = parse_step(block)
+            method_name, kwargs_dict = SubroutineFlowKeys.parse_step(block.to_obj())
             if not isinstance(method_name, str):
                 errors.append({"error": f"Non-string {method_key}", "block": block_obj})
                 return

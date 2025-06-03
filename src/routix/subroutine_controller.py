@@ -3,10 +3,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
+from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
 from .experiment_summary import ExperimentSummary
-from .utils import parse_step
 
 StoppingCriteriaT = TypeVar("StoppingCriteriaT", bound=DynamicDataObject)
 
@@ -89,7 +89,9 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
             if self.is_stopping_condition():
                 return
 
-            method_name, kwargs_dict = parse_step(routine_data)
+            method_name, kwargs_dict = SubroutineFlowKeys.parse_step(
+                routine_data.to_obj()
+            )
 
             routine_name = f"{prefix}_{method_name}" if prefix else method_name
             self._routine_name_stack.append(routine_name)

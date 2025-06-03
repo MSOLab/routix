@@ -4,6 +4,8 @@ from typing import Any, Sequence
 
 from typing_extensions import Self
 
+from .utils import object_to_json, object_to_yaml
+
 
 class DynamicDataObject:
     """
@@ -129,12 +131,7 @@ class DynamicDataObject:
             file_path (Path): The path where the JSON file will be saved.
             encoding (str): Encoding to use for the file. Defaults to "utf-8".
         """
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            with open(file_path, "w", encoding=encoding) as writer:
-                json.dump(self.to_obj(), writer, indent=2, ensure_ascii=False)
-        except (IOError, OSError) as e:
-            raise RuntimeError(f"Error writing to file {file_path}: {e}")
+        object_to_json(self.to_obj(), file_path, encoding=encoding)
 
     def to_yaml(self, file_path: Path, encoding="utf-8") -> None:
         """Serializes the object's data to a YAML file at the specified file path.
@@ -143,14 +140,33 @@ class DynamicDataObject:
             file_path (Path): The path where the YAML file will be saved.
             encoding (str): Encoding to use for the file. Defaults to "utf-8".
         """
-        import yaml  # Import here to avoid dependency issues
+        object_to_yaml(self.to_obj(), file_path, encoding=encoding)
 
-        try:
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(file_path, "w", encoding=encoding) as writer:
-                yaml.safe_dump(self.to_obj(), writer, default_flow_style=False)
-        except (IOError, OSError) as e:
-            raise RuntimeError(f"Error writing to file {file_path}: {e}")
+    @staticmethod
+    def safe_save_yaml(data_obj: Any, file_path: Path, encoding: str = "utf-8") -> None:
+        """Safely save data to a YAML file.
+
+        Utilizes the DynamicDataObject.to_yaml() method while
+        preserving the original structure when saving lists.
+
+        Args:
+            data_obj: Data to save (DynamicDataObject, list[DynamicDataObject], dict, etc.)
+            file_path (Path): File path to save to
+            encoding (str): File encoding (default: utf-8)
+        """
+        if isinstance(data_obj, DynamicDataObject):
+            data_obj.to_yaml(file_path, encoding=encoding)
+        elif isinstance(data_obj, list):
+            try:
+                data_to_save = [
+                    item.to_obj() if isinstance(item, DynamicDataObject) else item
+                    for item in data_obj
+                ]
+                object_to_yaml(data_to_save, file_path, encoding=encoding)
+            except (IOError, OSError) as e:
+                raise RuntimeError(f"Error writing to file {file_path}: {e}")
+        else:
+            object_to_yaml(data_obj, file_path, encoding=encoding)
 
 
 def main():
