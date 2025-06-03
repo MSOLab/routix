@@ -9,6 +9,7 @@ It provides:
 - Dot-accessible configuration trees (`DynamicDataObject`)
 - Logging with routine-context traceability
 - Experiment summary and timing support
+- Abstract base classes for runners in `src/routix/runner/` for extensible workflow execution patterns
 
 ## Subroutine Flow Data Format
 
@@ -29,3 +30,16 @@ enabling modular orchestration, logging, and reproducibility.
 ```
 
 For more details, refer to [subroutine_flow_data.md](./subroutine_flow_data.md).
+
+## Abstract base classes for runners
+
+Classes in `routix.runner` are extensible abstract base classes for implementing custom workflow runners. These classes provide a foundation for building repeatable, modular, and testable execution patterns for algorithmic experiments.
+
+- **`SingleInstanceRunner`**: An abstract base class for running a single problem instance. It provides a template for implementing the logic for one experiment, including setup, execution, and result collection.
+  - Typical usage: custom solvers, single-run experiments, or as a building block for higher-level runners.
+- **`InstanceSetRunner`**: An abstract base class for running a set of problem instances. It defines the interface and core logic for iterating over multiple instances, managing results, and integrating with experiment summaries.
+  - Typical usage: batch experiments, benchmarking, or automated evaluation over a dataset.
+
+Both classes are designed to be subclassed and extended. You can implement your own runner by inheriting from these base classes and overriding the required methods to fit your workflow.
+
+For implementation details, see the source files in `src/routix/runner/`.
