@@ -1,15 +1,17 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Generic, Sequence, TypeVar
 
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
 from .experiment_summary import ExperimentSummary
 from .utils import parse_step
 
+StoppingCriteriaT = TypeVar("StoppingCriteriaT", bound=DynamicDataObject)
 
-class SubroutineController(ABC):
+
+class SubroutineController(Generic[StoppingCriteriaT], ABC):
     """
     Base class for subroutine controllers using routine name context stack.
     """
@@ -23,7 +25,7 @@ class SubroutineController(ABC):
     experiment_summary: ExperimentSummary
     """Summary of the experiment, including method call logs and elapsed time."""
 
-    stopping_criteria: Any
+    stopping_criteria: StoppingCriteriaT
     """Stopping criteria for the experiment."""
 
     _subroutine_flow: DynamicDataObject
@@ -36,7 +38,7 @@ class SubroutineController(ABC):
         self,
         name: str,
         subroutine_flow: DynamicDataObject,
-        stopping_criteria: Any,
+        stopping_criteria: StoppingCriteriaT,
         start_dt: datetime | None = None,
     ):
         # Set the timer
@@ -54,6 +56,12 @@ class SubroutineController(ABC):
         self._method_call_log = []
 
     def set_working_dir(self, dir_path: Path | str):
+        """
+        Set the working directory for this controller.
+        This directory is used to store output files related to the experiment.
+        - If the directory does not exist, it will be created.
+        - If the directory already exists, it will not be overwritten.
+        """
         self._working_dir_path = Path(dir_path)
         self._working_dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -88,7 +96,7 @@ class SubroutineController(ABC):
             self.call_method(method_name, **kwargs_dict)
             self._routine_name_stack.pop()
 
-    def call_method(self, method_name: str, **kwargs):
+    def call_method(self, method_name: str, **kwargs: dict[str, Any]):
         if not hasattr(self, method_name):
             raise AttributeError(
                 f"{self.__class__.__name__} has no attribute {method_name}"
@@ -96,30 +104,27 @@ class SubroutineController(ABC):
         method_start_sec = self.timer.get_elapsed_sec()
         self.experiment_summary.record_method_call(method_name)
 
+        log_entry: dict[str, Any] = {
+            "routine_name": self.get_current_routine_name(),
+            "method": method_name,
+            "start_sec": method_start_sec,
+            "kwargs": kwargs,
+        }
         try:
             getattr(self, method_name)(**kwargs)
         except Exception as e:
-            self._add_method_call_log_entry(
-                routine_name=self.get_current_routine_name(),
-                method=method_name,
-                start_sec=method_start_sec,
-                elapsed_sec=0,
-                kwargs=kwargs,
-                error=str(e),
-            )
+            elapsed_sec = self.timer.get_elapsed_sec() - method_start_sec
+            log_entry["elapsed_sec"] = elapsed_sec
+            log_entry["error"] = str(e)
+            self._add_method_call_log_entry(log_entry)
             raise
 
         elapsed_sec = self.timer.get_elapsed_sec() - method_start_sec
-        self._add_method_call_log_entry(
-            routine_name=self.get_current_routine_name(),
-            method=method_name,
-            start_sec=method_start_sec,
-            elapsed_sec=elapsed_sec,
-            kwargs=kwargs,
-        )
+        log_entry["elapsed_sec"] = elapsed_sec
+        self._add_method_call_log_entry(log_entry)
 
-    def _add_method_call_log_entry(self, **kwargs):
-        self._method_call_log.append(kwargs)
+    def _add_method_call_log_entry(self, log_entry: dict[str, Any]):
+        self._method_call_log.append(log_entry)
 
     def get_method_call_log(self) -> list[dict[str, Any]]:
         return self._method_call_log.copy()

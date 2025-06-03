@@ -7,7 +7,7 @@ from .dynamic_data_object import DynamicDataObject
 __all__ = ["parse_step", "safe_save_yaml"]
 
 
-def parse_step(step: DynamicDataObject) -> tuple[str, dict]:
+def parse_step(step: DynamicDataObject) -> tuple[str, dict[str, Any]]:
     """
     Extracts method name and keyword arguments from a DynamicDataObject
     representing a subroutine flow step.
@@ -42,7 +42,7 @@ def parse_step(step: DynamicDataObject) -> tuple[str, dict]:
     return method_name, kwargs_dict
 
 
-def safe_save_yaml(data_obj, file_path: Path, encoding="utf-8") -> None:
+def safe_save_yaml(data_obj: object, file_path: Path, encoding: str = "utf-8") -> None:
     """
     Safely save data to a YAML file.
 
@@ -51,8 +51,8 @@ def safe_save_yaml(data_obj, file_path: Path, encoding="utf-8") -> None:
 
     Args:
         data_obj: Data to save (DynamicDataObject, list[DynamicDataObject], dict, etc.)
-        file_path: File path to save to
-        encoding: File encoding (default: utf-8)
+        file_path (Path): File path to save to
+        encoding (str): File encoding (default: utf-8)
     """
     import yaml
 
@@ -65,11 +65,10 @@ def safe_save_yaml(data_obj, file_path: Path, encoding="utf-8") -> None:
         # Case list[Any]
         try:
             # Convert DynamicDataObject in list to dict
-            data_to_save = [
+            data_to_save: list[Any] = [
                 item.to_obj() if isinstance(item, DynamicDataObject) else item
                 for item in data_obj
             ]
-
             with open(file_path, "w", encoding=encoding) as writer:
                 yaml.safe_dump(data_to_save, writer, default_flow_style=False)
         except (IOError, OSError) as e:
