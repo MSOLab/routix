@@ -1,3 +1,3 @@
-from .single_instance_solver import SingleInstanceSolver
+from .single_instance_runner import SingleInstanceRunner
 
-__all__ = ["SingleInstanceSolver"]
+__all__ = ["SingleInstanceRunner"]
