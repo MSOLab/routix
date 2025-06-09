@@ -34,10 +34,14 @@ class ExperimentSummary:
 
     name: str
     """Identifier of the instance or experiment."""
+    # TODO: replace
     runs: list[SolverOutputSummary] = field(default_factory=list)
     """List of solver results."""
     method_call_counts: dict[str, int] = field(default_factory=dict)
     """Frequency of method invocations."""
+    # TODO: manage list of run IDs and summary dictionary
+    # TODO: manage list of run IDs with valid solutions
+    # TODO: manage list of run IDs with valid objective bounds
 
     def log_run(self, method_name: str, summary: SolverOutputSummary) -> None:
         """Records a solver run and its associated method call."""
