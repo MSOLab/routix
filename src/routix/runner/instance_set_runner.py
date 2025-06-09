@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
@@ -89,7 +90,7 @@ class InstanceSetRunner(Generic[ProblemT, RunnerT], ABC):
                 result = runner.run()
             except Exception as e:
                 # Handle or log error, append None or an error object as appropriate
-                print(f"Error in instance {idx}: {e}")  # TODO: logging
+                logging.error(f"Error in instance {idx}: {e}")
                 result = None
             self.results.append(result)
 

@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
@@ -16,27 +17,6 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
     Base class for subroutine controllers using routine name context stack.
     """
 
-    timer: ElapsedTimer
-    """
-    Timer to measure elapsed time during the experiment.
-    This is set to the current time when the experiment starts.
-    """
-
-    experiment_summary: ExperimentSummary
-    """Summary of the experiment, including method call logs and elapsed time."""
-
-    stopping_criteria: StoppingCriteriaT
-    """Stopping criteria for the experiment."""
-
-    _subroutine_flow: DynamicDataObject
-    _method_call_log: list[dict[str, Any]]
-    """A list of dictionaries containing method call logs."""
-    _routine_name_stack: list[str]
-    """Stack of routine names to keep track of the current context."""
-
-    _random_seed: Optional[int]
-    """Random seed for reproducibility."""
-
     def __init__(
         self,
         name: str,
@@ -45,20 +25,38 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         start_dt: datetime | None = None,
     ):
         # Set the timer
-        self.timer = ElapsedTimer()
+        e_timer = ElapsedTimer()
         if start_dt is not None:
-            self.timer.set_start_time(start_dt)
+            e_timer.set_start_time(start_dt)
         else:
-            self.timer.set_start_time_as_now()
-        self.experiment_summary = ExperimentSummary(name)
+            e_timer.set_start_time_as_now()
+
+        # Algorithm data
         self._subroutine_flow = subroutine_flow
+        """The sequence of subroutines to be executed in the experiment."""
         self.stopping_criteria = stopping_criteria
+        """Stopping criteria for the experiment."""
 
-        self._working_dir_path: Path | None = None
-        self._routine_name_stack = []
-        self._method_call_log = []
+        # Log
+        self._method_call_log: list[dict[str, Any]] = []
+        """A list of dictionaries containing method call logs."""
 
-        self._random_seed = None
+        # Output data
+        self.experiment_summary = ExperimentSummary(name)
+        """Summary of the experiment, including method call logs and elapsed time."""
+
+        # Subroutine controller state
+        self.timer = e_timer
+        """
+        Timer to measure elapsed time during the experiment.
+        This is set to the current time when the experiment starts.
+        """
+        self._working_dir_path: Optional[Path] = None
+        """Path to the working directory where output files are stored."""
+        self._routine_name_stack: list[str] = []
+        """Stack of routine names to keep track of the current context."""
+        self._random_seed: Optional[int] = None
+        """Random seed for reproducibility."""
 
     def set_working_dir(self, dir_path: Path | str):
         """
@@ -178,11 +176,11 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         zero_fill_width = len(str(n_repeats))
         for i in range(n_repeats):
             if self.is_stopping_condition():
-                print(
+                logging.info(
                     f"[Repeat] Stopping condition met at iteration {i + 1}/{n_repeats}."
                 )
                 break
-            print(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
+            logging.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
 
             prefix = f"{last_routine_name}-{str(i + 1).zfill(zero_fill_width)}"
             self._routine_name_stack.append(prefix)

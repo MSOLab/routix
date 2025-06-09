@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
@@ -119,26 +120,26 @@ class ExperimentSummary:
         return (first.objective_value - best.objective_value) / first.objective_value
 
     def report(self, is_maximize: bool = False) -> None:
-        print(f"\n=== Experiment Summary: {self.name} ===")
-        print(f"Total elapsed time: {self.get_total_elapsed_time():.2f} sec")
+        logging.info(f"\n=== Experiment Summary: {self.name} ===")
+        logging.info(f"Total elapsed time: {self.get_total_elapsed_time():.2f} sec")
 
         if is_maximize:
             best = self.get_summary_maximum_obj()
         else:
             best = self.get_summary_minimum_obj()
-        print(f"Final status: {best.status if best else 'N/A'}")
-        print(f"Final objective: {best.objective_value if best else 'N/A'}")
+        logging.info(f"Final status: {best.status if best else 'N/A'}")
+        logging.info(f"Final objective: {best.objective_value if best else 'N/A'}")
 
         ratio = self.get_improvement_ratio(is_maximize)
-        print(
+        logging.info(
             f"Improvement ratio: {ratio:.2%}"
             if ratio is not None
             else "Improvement: N/A"
         )
-        print("--- Method Call Counts ---")
+        logging.info("--- Method Call Counts ---")
         for method, count in sorted(self.method_call_counts.items()):
-            print(f"{method}: {count} calls")
-        print("====================================\n")
+            logging.info(f"{method}: {count} calls")
+        logging.info("====================================\n")
 
     def to_dict(self, is_maximize: bool = False) -> dict[str, Any]:
         if is_maximize:
