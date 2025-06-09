@@ -166,7 +166,7 @@ class ExperimentSummary:
             "bestObj": best.objective_value if best else None,
             "bestBound": best.best_objective_bound if best else None,
             "improvementRatio": self.get_improvement_ratio(is_maximize),
-            "methodCallCounts": self.method_call_counts,
+            "methodCallCounts": f'"{self.method_call_counts}"',
             "numRuns": len(self.runs),
         }
 
