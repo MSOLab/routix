@@ -154,15 +154,16 @@ class ExperimentSummary:
             first_obj = best.objective_value if best else None
 
         return {
-            "instance_name": self.name,
-            "total_elapsed_time": self.get_total_elapsed_time(),
+            "instanceName": self.name,
+            "foundFeasibleSol": self.found_feasible_solution(is_maximize),
+            "totalElapsedTime": self.get_total_elapsed_time(),
             "status": best.status if best else None,
-            "first_obj": first_obj,
-            "best_obj": best.objective_value if best else None,
-            "improvement_ratio": self.get_improvement_ratio(is_maximize),
-            "is_feasible": self.found_feasible_solution(is_maximize),
-            "method_call_counts": self.method_call_counts,
-            "num_runs": len(self.runs),
+            "firstObj": first_obj,
+            "bestObj": best.objective_value if best else None,
+            "bestBound": best.best_objective_bound if best else None,
+            "improvementRatio": self.get_improvement_ratio(is_maximize),
+            "methodCallCounts": self.method_call_counts,
+            "numRuns": len(self.runs),
         }
 
     def to_yaml(self, file_path: Path) -> None:
