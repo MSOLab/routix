@@ -1,4 +1,5 @@
 import logging
+import traceback
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
@@ -76,6 +77,13 @@ class InstanceSetRunner(Generic[ProblemT, RunnerT], ABC):
         self.runners.clear()
         self.results.clear()
 
+        instance_set_skip_run_do_post_process = self.output_metadata.get(
+            "instance_set_skip_run_do_post_process", False
+        )
+        if instance_set_skip_run_do_post_process:
+            # If skip run is set, skip the run and directly do post-process
+            return self.post_run_process()
+
         for idx, instance in enumerate(self.instances):
             runner = self.s_i_runner_class(
                 instance=instance,
@@ -91,6 +99,7 @@ class InstanceSetRunner(Generic[ProblemT, RunnerT], ABC):
             except Exception as e:
                 # Handle or log error, append None or an error object as appropriate
                 logging.error(f"Error in instance {idx}: {e}")
+                traceback.print_exc()
                 result = None
             self.results.append(result)
 

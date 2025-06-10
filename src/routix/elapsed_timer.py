@@ -11,6 +11,8 @@ class ElapsedTimer:
     """Datetime object of start time"""
     _start_time_in_seconds: float
     """POSIX timestamp of start time"""
+    _dir_name_format: str = "%Y%m%dT%H%M%S_%f"
+    """Format for directory names based on start time"""
 
     def __init__(self):
         """Initializes the timer with the current time."""
@@ -91,7 +93,22 @@ class ElapsedTimer:
         Returns:
             str: Formatted start datetime string suitable for directory names.
         """
-        return self.get_start_dt_strftime("%Y%m%dT%H%M%S_%f")
+        return self.get_start_dt_strftime(self._dir_name_format)
+
+    def set_start_dt_from_dir_name(self, dir_name: str) -> None:
+        """
+        Sets the start datetime from a directory name formatted as _dir_name_format.
+
+        Args:
+            dir_name (str): Directory name containing the start datetime.
+        """
+        try:
+            self._start_dt = datetime.strptime(dir_name, self._dir_name_format)
+            self._start_time_in_seconds = self._start_dt.timestamp()
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid directory name format for start datetime: {dir_name}"
+            ) from e
 
     # Elapsed time
 

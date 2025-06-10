@@ -98,12 +98,54 @@ class InstanceSetConcurrentRunner(InstanceSetRunner, Generic[ProblemT, RunnerT])
         self.runners.clear()
         self.results.clear()
 
+        instance_set_skip_run_do_post_process = self.output_metadata.get(
+            "instance_set_skip_run_do_post_process", False
+        )
+        if instance_set_skip_run_do_post_process:
+            # If skip run is set, skip the run and directly do post-process
+            return self.post_run_process()
+
         with concurrent.futures.ProcessPoolExecutor(max_workers=worker_cnt) as executor:
             futures = [
-                executor.submit(self._run_single, instance)
+                executor.submit(
+                    _run_single_instance,
+                    instance,
+                    self.s_i_runner_class,
+                    self.shared_param_dict,
+                    self.subroutine_flow,
+                    self.stopping_criteria,
+                    self.output_dir,
+                    self.output_metadata,
+                )
                 for instance in self.instances
             ]
             for future in concurrent.futures.as_completed(futures):
                 self.results.append(future.result())
 
         return self.post_run_process()
+
+
+def _run_single_instance(
+    instance,
+    s_i_runner_class,
+    shared_param_dict,
+    subroutine_flow,
+    stopping_criteria,
+    output_dir,
+    output_metadata,
+):
+    runner = s_i_runner_class(
+        instance=instance,
+        shared_param_dict=shared_param_dict,
+        subroutine_flow=subroutine_flow,
+        stopping_criteria=stopping_criteria,
+        output_dir=output_dir,
+        output_metadata=output_metadata,
+    )
+    try:
+        return runner.run()
+    except Exception as e:
+        logging.error(
+            f"Error in instance {getattr(instance, 'name', str(instance))}: {e}"
+        )
+        return None

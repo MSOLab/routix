@@ -14,7 +14,6 @@ class SingleInstanceRunner(Generic[ProblemT, ControllerT], ABC):
     Abstract runner for a single problem instance.
     """
 
-    instance: ProblemT
     ctrlr: ControllerT
 
     working_dir: Path
@@ -72,6 +71,14 @@ class SingleInstanceRunner(Generic[ProblemT, ControllerT], ABC):
         """
         self.ctrlr = self.init_controller()
         self.ctrlr.set_working_dir(self.working_dir)
+
+        single_instance_skip_run_do_post_process = self.output_metadata.get(
+            "single_instance_skip_run_do_post_process", False
+        )
+        if single_instance_skip_run_do_post_process:
+            # If skip run is set, skip the run and directly do post-process
+            return self.post_run_process()
+
         self.ctrlr.run()
 
         return self.post_run_process()
