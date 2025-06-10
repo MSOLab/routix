@@ -8,9 +8,7 @@ authors = [
 ]
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = [
-    "typing-extensions>=4.14.0",
-]
+dependencies = []
 
 [project.urls]
 Repository = "https://github.com/junetech/routix.git"

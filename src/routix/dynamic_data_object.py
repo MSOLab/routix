@@ -1,8 +1,6 @@
 import json
 from pathlib import Path, PurePath
-from typing import Any, Sequence
-
-from typing_extensions import Self
+from typing import Any, Self, Sequence
 
 from .utils import object_to_json, object_to_yaml
 
