@@ -36,6 +36,16 @@ class ElapsedTimer:
         """Resets the timer to the current time."""
         self.set_start_time_as_now()
 
+    # Start datetime
+
+    @property
+    def start_dt(self) -> datetime:
+        """
+        Returns:
+            datetime: The start datetime of the timer.
+        """
+        return self._start_dt
+
     def get_formatted_start_dt(self) -> str:
         """
         Returns:
@@ -74,13 +84,16 @@ class ElapsedTimer:
         """
         return self._start_dt.strftime(strftime_format)
 
-    @property
-    def start_dt(self) -> datetime:
+    def get_start_dt_for_dir_name(self) -> str:
         """
+        Returns the start datetime formatted for use in a directory name.
+
         Returns:
-            datetime: The start datetime of the timer.
+            str: Formatted start datetime string suitable for directory names.
         """
-        return self._start_dt
+        return self.get_start_dt_strftime("%Y%m%dT%H%M%S_%f")
+
+    # Elapsed time
 
     @property
     def elapsed_sec(self) -> float:

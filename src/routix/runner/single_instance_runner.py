@@ -60,8 +60,8 @@ class SingleInstanceRunner(Generic[ProblemT, ControllerT], ABC):
         - If an instance name is provided, it creates a further subdirectory for the instance.
         """
         self.working_dir = self.output_dir
-        if self.output_dir.name != self.e_timer.get_formatted_start_dt():
-            self.working_dir /= self.e_timer.get_formatted_start_dt()
+        if self.output_dir.name != self.e_timer.get_start_dt_for_dir_name():
+            self.working_dir /= self.e_timer.get_start_dt_for_dir_name()
         if self.ins_name is not None:
             self.working_dir /= self.ins_name
         self.working_dir.mkdir(parents=True, exist_ok=True)
