@@ -83,6 +83,18 @@ class SubroutineFlowValidator:
                 )
                 return
 
+            # Check if unexpected arguments for the method are present
+            sig = inspect.signature(getattr(self.controller_class, method_name))
+            unexpected_args = [arg for arg in kwargs_dict if arg not in sig.parameters]
+            if unexpected_args:
+                errors.append(
+                    {
+                        "error": f"Unexpected arguments for '{method_name}': {unexpected_args}",
+                        "block": block_obj,
+                    }
+                )
+                return
+
         recurse(flow)
         return errors
 
