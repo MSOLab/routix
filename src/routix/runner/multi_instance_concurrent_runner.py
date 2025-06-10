@@ -3,14 +3,14 @@ import logging
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
-from .instance_set_runner import InstanceSetRunner
+from .multi_instance_runner import MultiInstanceRunner
 from .single_instance_runner import SingleInstanceRunner
 
 ProblemT = TypeVar("ProblemT")
 RunnerT = TypeVar("RunnerT", bound=SingleInstanceRunner)
 
 
-class InstanceSetConcurrentRunner(InstanceSetRunner, Generic[ProblemT, RunnerT]):
+class MultiInstanceConcurrentRunner(MultiInstanceRunner, Generic[ProblemT, RunnerT]):
     """
     Orchestrates solving a set of instances concurrently using a specified runner class.
     This class extends the InstanceSetRunner to allow for concurrent execution of

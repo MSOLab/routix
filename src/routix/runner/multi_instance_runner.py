@@ -11,7 +11,7 @@ ProblemT = TypeVar("ProblemT")
 RunnerT = TypeVar("RunnerT", bound=SingleInstanceRunner)
 
 
-class InstanceSetRunner(Generic[ProblemT, RunnerT], ABC):
+class MultiInstanceRunner(Generic[ProblemT, RunnerT], ABC):
     """
     Orchestrates solving a set of instances with a given runner class.
     """
