@@ -9,7 +9,7 @@ from ..type_hints import Numeric
 class MetricTimeSeries(Generic[Numeric]):
     """
     A time series that stores values associated with timestamps.
-    It allows adding new entries, retrieving values, and checking the latest value.
+    It allows adding new entries, retrieving values, and checking the last value.
     """
 
     def __init__(self, name: str):
@@ -18,8 +18,8 @@ class MetricTimeSeries(Generic[Numeric]):
         """
         timestamp -> value
         """
-        self._latest_val: Optional[Numeric] = None
-        """Latest value in the time series."""
+        self._last_value: Optional[Numeric] = None
+        """Last value in the time series."""
         self._timestamp_note_map: dict[float, Any] = {}
         """
         timestamp -> note
@@ -42,7 +42,7 @@ class MetricTimeSeries(Generic[Numeric]):
         """
 
         self._timestamp_value_map[timestamp] = value
-        self._latest_val = value
+        self._last_value = value
         if note is not None:
             self._timestamp_note_map[timestamp] = note
 
@@ -64,20 +64,18 @@ class MetricTimeSeries(Generic[Numeric]):
         return self.time_sorted_values
 
     @property
-    def latest_value(self) -> Optional[Numeric]:
-        """Return the latest value in the time series."""
-        return self._latest_val
+    def last_value(self) -> Optional[Numeric]:
+        """Return the last value in the time series."""
+        return self._last_value
 
     @property
     def timestamp_note_map(self) -> dict[float, Any]:
         """Return the timestamp to note map."""
         return self._timestamp_note_map.copy()
 
-    def add_if_value_stg_latest(
-        self, timestamp: float, value: Numeric, note: Any = None
-    ):
+    def add_if_value_stg_last(self, timestamp: float, value: Numeric, note: Any = None):
         """
-        Add if given value is *strictly greather than* the latest value.
+        Add if given value is *strictly greather than* the last value.
         If the series is empty, it will add the value regardless.
 
         Args:
@@ -85,14 +83,12 @@ class MetricTimeSeries(Generic[Numeric]):
             value (Numeric): _value_ of the entry.
             note (Any, optional): Additional information about the entry.
         """
-        if self._latest_val is None or value > self._latest_val:
+        if self._last_value is None or value > self._last_value:
             self.add(timestamp, value, note=note)
 
-    def add_if_value_stl_latest(
-        self, timestamp: float, value: Numeric, note: Any = None
-    ):
+    def add_if_value_stl_last(self, timestamp: float, value: Numeric, note: Any = None):
         """
-        Add if given value is *strictly less than* the latest value.
+        Add if given value is *strictly less than* the last value.
         If the series is empty, it will add the value regardless.
 
         Args:
@@ -100,20 +96,20 @@ class MetricTimeSeries(Generic[Numeric]):
             value (Numeric): _value_ of the entry.
             note (Any, optional): Additional information about the entry.
         """
-        if self._latest_val is None or value < self._latest_val:
+        if self._last_value is None or value < self._last_value:
             self.add(timestamp, value, note=note)
 
-    def repeat_latest(self, timestamp: float, note: Any = None):
+    def repeat_last_value(self, timestamp: float, note: Any = None):
         """
-        Add the latest value at the given timestamp.
+        Add the last value at the given timestamp.
         If the series is empty, it will not add anything.
 
         Args:
             timestamp (float): _timestamp_ of the entry.
             note (Any, optional): Additional information about the entry.
         """
-        if self._latest_val is not None:
-            self.add(timestamp, self._latest_val, note=note)
+        if self._last_value is not None:
+            self.add(timestamp, self._last_value, note=note)
 
     # I/O from/to dict
 

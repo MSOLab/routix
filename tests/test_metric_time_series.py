@@ -3,47 +3,47 @@ from pathlib import Path
 from src.routix.metric_time_series import MetricTimeSeries
 
 
-def test_add_and_latest_value():
+def test_add_and_last_value():
     mts = MetricTimeSeries[float]("test_series")
     assert len(mts) == 0
-    assert mts.latest_value is None
+    assert mts.last_value is None
 
     mts.add(0.0, 100.0)
     assert len(mts) == 1
-    assert mts.latest_value == 100.0
+    assert mts.last_value == 100.0
 
     mts.add(1.0, 90.0)
-    assert mts.latest_value == 90.0
+    assert mts.last_value == 90.0
     assert mts.timestamps == [0.0, 1.0]
     assert mts.values == [100.0, 90.0]
 
 
-def test_add_if_value_stg_latest():
+def test_add_if_value_stg_last():
     mts = MetricTimeSeries[float]("inc_series")
-    mts.add_if_value_stg_latest(0.0, 100.0)
-    mts.add_if_value_stg_latest(1.0, 90.0)  # ignored
-    mts.add_if_value_stg_latest(2.0, 110.0)  # added
+    mts.add_if_value_stg_last(0.0, 100.0)
+    mts.add_if_value_stg_last(1.0, 90.0)  # ignored
+    mts.add_if_value_stg_last(2.0, 110.0)  # added
 
     assert mts.timestamps == [0.0, 2.0]
     assert mts.values == [100.0, 110.0]
 
 
-def test_add_if_value_stl_latest():
+def test_add_if_value_stl_last():
     mts = MetricTimeSeries[float]("dec_series")
-    mts.add_if_value_stl_latest(0.0, 100.0)
-    mts.add_if_value_stl_latest(1.0, 110.0)  # ignored
-    mts.add_if_value_stl_latest(2.0, 90.0)  # added
+    mts.add_if_value_stl_last(0.0, 100.0)
+    mts.add_if_value_stl_last(1.0, 110.0)  # ignored
+    mts.add_if_value_stl_last(2.0, 90.0)  # added
 
     assert mts.timestamps == [0.0, 2.0]
     assert mts.values == [100.0, 90.0]
 
 
-def test_repeat_latest():
+def test_repeat_last():
     mts = MetricTimeSeries[float]("repeat_test")
-    mts.repeat_latest(0.0)  # nothing happens
+    mts.repeat_last_value(0.0)  # nothing happens
 
     mts.add(1.0, 42.0)
-    mts.repeat_latest(2.0)
+    mts.repeat_last_value(2.0)
     assert mts.timestamps == [1.0, 2.0]
     assert mts.values == [42.0, 42.0]
 

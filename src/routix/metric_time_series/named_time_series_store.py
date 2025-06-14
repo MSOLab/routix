@@ -12,7 +12,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
     """
     A store for named time series, allowing to manage multiple MetricTimeSeries instances.
     It provides methods to add entries, retrieve time series by name,
-    and manage the latest values across all time series.
+    and manage the last values across all time series.
     It is a generic class that can work with any numeric type defined in the typevars module.
     """
 
@@ -80,7 +80,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
 
     def add_if_stg(self, name: str, timestamp: float, value: Numeric, note: Any = None):
         """
-        Add an entry to the MetricTimeSeries if the value is *strictly greater than* the latest value.
+        Add an entry to the MetricTimeSeries if the value is *strictly greater than* the last value.
         If the MetricTimeSeries does not exist, it will be created.
 
         Args:
@@ -89,11 +89,11 @@ class NamedTimeSeriesStore(Generic[Numeric]):
             value (Numeric): _value_ of the entry.
             note (Any, optional): Additional information about the entry.
         """
-        self.get_or_create(name).add_if_value_stg_latest(timestamp, value, note=note)
+        self.get_or_create(name).add_if_value_stg_last(timestamp, value, note=note)
 
     def add_if_stl(self, name: str, timestamp: float, value: Numeric, note: Any = None):
         """
-        Add an entry to the MetricTimeSeries if the value is *strictly less than* the latest value.
+        Add an entry to the MetricTimeSeries if the value is *strictly less than* the last value.
         If the MetricTimeSeries does not exist, it will be created.
 
         Args:
@@ -102,11 +102,11 @@ class NamedTimeSeriesStore(Generic[Numeric]):
             value (Numeric): _value_ of the entry.
             note (Any, optional): Additional information about the entry.
         """
-        self.get_or_create(name).add_if_value_stl_latest(timestamp, value, note=note)
+        self.get_or_create(name).add_if_value_stl_last(timestamp, value, note=note)
 
-    def repeat_latest(self, name: str, timestamp: float, note: Any = None):
+    def repeat_last_value(self, name: str, timestamp: float, note: Any = None):
         """
-        Repeat the latest value in the MetricTimeSeries with the given name.
+        Repeat the last value in the MetricTimeSeries with the given name.
         If the MetricTimeSeries does not exist, nothing happens.
 
         Args:
@@ -115,21 +115,21 @@ class NamedTimeSeriesStore(Generic[Numeric]):
             note (Any, optional): Additional information about the entry.
         """
         if name in self._store:
-            self._store[name].repeat_latest(timestamp, note=note)
+            self._store[name].repeat_last_value(timestamp, note=note)
         else:
-            warnings.warn(f"No time series with name '{name}' to repeat_latest.")
+            warnings.warn(f"No time series with name '{name}' to repeat_last.")
 
-    def latest_values(self) -> dict[str, Optional[Numeric]]:
+    def get_last_value_dict(self) -> dict[str, Optional[Numeric]]:
         """
-        Get the latest values of all MetricTimeSeries in the store.
+        Get the last values of all MetricTimeSeries in the store.
         This method returns a dictionary where the keys are the names of the MetricTimeSeries
-        and the values are their latest values. If a MetricTimeSeries has no entries,
+        and the values are their last values. If a MetricTimeSeries has no entries,
         the value will be None.
 
         Returns:
-            dict[str, Optional[Numeric]]: names -> their latest values.
+            dict[str, Optional[Numeric]]: names -> their last values.
         """
-        return {name: ts.latest_value for name, ts in self._store.items()}
+        return {name: ts.last_value for name, ts in self._store.items()}
 
     def clear(self):
         """Remove all MetricTimeSeries in the store."""

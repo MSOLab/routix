@@ -19,13 +19,13 @@ def test_add_without_note_does_not_override():
     mts.add(0.0, 200.0)  # same timestamp, no note update
 
     assert mts.timestamp_note_map[0.0] == "init"
-    assert mts.latest_value == 200.0
+    assert mts.last_value == 200.0
 
 
-def test_repeat_latest_with_note():
+def test_repeat_last_with_note():
     mts = MetricTimeSeries[float]("repeat_test")
     mts.add(1.0, 123.0, note="original")
-    mts.repeat_latest(2.0, note="reapplied")
+    mts.repeat_last_value(2.0, note="reapplied")
 
     assert mts.timestamp_note_map[2.0] == "reapplied"
     assert mts.values == [123.0, 123.0]
@@ -33,9 +33,9 @@ def test_repeat_latest_with_note():
 
 def test_conditional_add_with_notes():
     mts = MetricTimeSeries[float]("stg_test")
-    mts.add_if_value_stg_latest(0.0, 100.0, note="start")
-    mts.add_if_value_stg_latest(1.0, 90.0, note="should_ignore")
-    mts.add_if_value_stg_latest(2.0, 120.0, note="improved")
+    mts.add_if_value_stg_last(0.0, 100.0, note="start")
+    mts.add_if_value_stg_last(1.0, 90.0, note="should_ignore")
+    mts.add_if_value_stg_last(2.0, 120.0, note="improved")
 
     notes = mts.timestamp_note_map
     assert 1.0 not in notes

@@ -9,7 +9,7 @@ def test_add_entry_with_note():
     store.add_entry("series1", 0.0, 100.0, note="initial")
     ts = store.get_or_create("series1")
 
-    assert ts.latest_value == 100.0
+    assert ts.last_value == 100.0
     assert ts.timestamp_note_map[0.0] == "initial"
 
 
@@ -36,21 +36,21 @@ def test_add_if_stl_with_note():
     assert ts.timestamp_note_map[2.0]["event"] == "drop"
 
 
-def test_repeat_latest_with_note():
+def test_repeat_last_with_note():
     store = NamedTimeSeriesStore[float]()
     store.add_entry("repeatable", 0.0, 123.0, note="first")
-    store.repeat_latest("repeatable", 1.0, note="copied")
+    store.repeat_last_value("repeatable", 1.0, note="copied")
 
     ts = store.get_or_create("repeatable")
     assert ts.values == [123.0, 123.0]
     assert ts.timestamp_note_map[1.0] == "copied"
 
 
-def test_repeat_latest_warns_on_missing_series():
+def test_repeat_last_warns_on_missing_series():
     store = NamedTimeSeriesStore[float]()
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        store.repeat_latest("no_such", 1.0, note="ignored")
+        store.repeat_last_value("no_such", 1.0, note="ignored")
 
         assert len(w) == 1
         assert "No time series with name 'no_such'" in str(w[0].message)
@@ -66,6 +66,6 @@ def test_yaml_roundtrip_with_notes(tmp_path: Path):
     store.save_yaml(file_path)
 
     loaded = NamedTimeSeriesStore[float].load_yaml(file_path)
-    assert loaded.latest_values() == store.latest_values()
+    assert loaded.get_last_value_dict() == store.get_last_value_dict()
     assert loaded.get_or_create("obj_value").timestamp_note_map[0.0] == "init"
     assert loaded.get_or_create("obj_bound").timestamp_note_map[0.0]["type"] == "bound"

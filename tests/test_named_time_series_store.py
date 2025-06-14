@@ -12,8 +12,8 @@ def test_add_and_retrieve():
 
     assert "obj_val" in store
     assert len(store) == 2
-    assert store.latest_values()["obj_val"] == 90.0
-    assert store.latest_values()["obj_bound"] == 200.0
+    assert store.get_last_value_dict()["obj_val"] == 90.0
+    assert store.get_last_value_dict()["obj_bound"] == 200.0
 
 
 def test_add_if_stg():
@@ -38,21 +38,21 @@ def test_add_if_stl():
     assert ts.values == [50.0, 30.0]
 
 
-def test_repeat_latest_with_existing_series():
+def test_repeat_last_with_existing_series():
     store = NamedTimeSeriesStore[float]()
     store.add_entry("time", 0.0, 100.0)
-    store.repeat_latest("time", 1.0)
+    store.repeat_last_value("time", 1.0)
 
     ts = store.get_or_create("time")
     assert ts.timestamps == [0.0, 1.0]
     assert ts.values == [100.0, 100.0]
 
 
-def test_repeat_latest_warns_if_missing():
+def test_repeat_last_warns_if_missing():
     store = NamedTimeSeriesStore[float]()
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        store.repeat_latest("nonexistent", 1.0)
+        store.repeat_last_value("nonexistent", 1.0)
 
         assert len(w) == 1
         assert "No time series with name 'nonexistent'" in str(w[0].message)
@@ -75,7 +75,7 @@ def test_dict_roundtrip():
 
     d = store.to_dict()
     loaded = NamedTimeSeriesStore.from_dict(d)
-    assert loaded.latest_values() == store.latest_values()
+    assert loaded.get_last_value_dict() == store.get_last_value_dict()
 
 
 def test_yaml_roundtrip(tmp_path: Path):
@@ -88,5 +88,5 @@ def test_yaml_roundtrip(tmp_path: Path):
     store.save_yaml(file_path)
 
     loaded = NamedTimeSeriesStore[float].load_yaml(file_path)
-    assert loaded.latest_values() == store.latest_values()
+    assert loaded.get_last_value_dict() == store.get_last_value_dict()
     assert loaded.name_set() == store.name_set()
