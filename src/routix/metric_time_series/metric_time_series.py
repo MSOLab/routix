@@ -15,9 +15,9 @@ class MetricTimeSeries(Generic[Numeric]):
     def __init__(self, name: str):
         self.name = name
         self._timestamp_value_map: dict[float, Numeric] = {}
-        """
-        timestamp -> value
-        """
+        """timestamp -> value"""
+        self._last_timestamp: Optional[float] = None
+        """Last timestamp in the time series."""
         self._last_value: Optional[Numeric] = None
         """Last value in the time series."""
         self._timestamp_note_map: dict[float, Any] = {}
@@ -42,6 +42,7 @@ class MetricTimeSeries(Generic[Numeric]):
         """
 
         self._timestamp_value_map[timestamp] = value
+        self._last_timestamp = timestamp
         self._last_value = value
         if note is not None:
             self._timestamp_note_map[timestamp] = note
@@ -62,6 +63,11 @@ class MetricTimeSeries(Generic[Numeric]):
     @property
     def values(self) -> list[Numeric]:
         return self.time_sorted_values
+
+    @property
+    def last_timestamp(self) -> Optional[float]:
+        """Return the last timestamp in the time series."""
+        return self._last_timestamp
 
     @property
     def last_value(self) -> Optional[Numeric]:
