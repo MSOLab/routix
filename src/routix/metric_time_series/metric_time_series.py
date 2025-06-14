@@ -161,31 +161,34 @@ class MetricTimeSeries(Generic[Numeric]):
 
     # I/O from/to YAML
 
-    def save_yaml(self, file_path: Path | str):
-        """
-        Save the MetricTimeSeries to a YAML file.
+    def save_yaml(self, file_path: Path | str, encoding: str = "utf-8"):
+        """Save the MetricTimeSeries to a YAML file.
 
         Args:
             file_path (Path | str): Path to the YAML file.
+            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
         """
         import yaml
 
-        with open(file_path, "w") as file:
+        with open(file_path, "w", encoding=encoding) as file:
             yaml.dump(self.to_dict(), file)
 
     @classmethod
-    def load_yaml(cls, file_path: Path | str) -> MetricTimeSeries:
+    def load_yaml(
+        cls, file_path: Path | str, encoding: str = "utf-8"
+    ) -> MetricTimeSeries:
         """
         Load a MetricTimeSeries from a YAML file.
 
         Args:
             file_path (Path | str): Path to the YAML file.
+            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
 
         Returns:
             MetricTimeSeries: The loaded MetricTimeSeries instance.
         """
         import yaml
 
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding=encoding) as file:
             data = yaml.safe_load(file)
         return cls.from_dict(data)

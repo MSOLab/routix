@@ -138,8 +138,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
     # I/O from/to dict
 
     def to_dict(self) -> dict[str, dict[str, Any]]:
-        """
-        Convert the store to a dictionary representation.
+        """Convert the store to a dictionary representation.
 
         Returns:
             dict[str, dict[str, Any]]: A dictionary where keys are names of MetricTimeSeries
@@ -151,8 +150,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
     def from_dict(
         cls, data: dict[str, dict[str, Any]]
     ) -> NamedTimeSeriesStore[Numeric]:
-        """
-        Create a NamedTimeSeriesStore from a dictionary representation.
+        """Create a NamedTimeSeriesStore from a dictionary representation.
 
         Args:
             data (dict[str, dict[str, Any]]): A dictionary where keys are names of MetricTimeSeries
@@ -168,31 +166,33 @@ class NamedTimeSeriesStore(Generic[Numeric]):
 
     # I/O from/to YAML
 
-    def save_yaml(self, file_path: Path | str):
-        """
-        Save the store to a YAML file.
+    def save_yaml(self, file_path: Path | str, encoding: str = "utf-8"):
+        """Save the store to a YAML file.
 
         Args:
             file_path (str): Path to the YAML file where the store will be saved.
+            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
         """
         import yaml
 
-        with open(file_path, "w") as file:
+        with open(file_path, "w", encoding=encoding) as file:
             yaml.dump(self.to_dict(), file)
 
     @classmethod
-    def load_yaml(cls, file_path: Path | str) -> NamedTimeSeriesStore[Numeric]:
-        """
-        Load a NamedTimeSeriesStore from a YAML file.
+    def load_yaml(
+        cls, file_path: Path | str, encoding: str = "utf-8"
+    ) -> NamedTimeSeriesStore[Numeric]:
+        """Load a NamedTimeSeriesStore from a YAML file.
 
         Args:
             file_path (str): Path to the YAML file from which the store will be loaded.
+            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
 
         Returns:
             NamedTimeSeriesStore[Numeric]: An instance of NamedTimeSeriesStore populated with the data.
         """
         import yaml
 
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding=encoding) as file:
             data = yaml.safe_load(file)
         return cls.from_dict(data)
