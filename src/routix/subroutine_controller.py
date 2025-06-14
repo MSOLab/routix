@@ -3,11 +3,13 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, Optional, Sequence, TypeVar
+from warnings import warn
 
 from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
 from .experiment_summary import ExperimentSummary
+from .method_context_manager import MethodContextManager
 
 StoppingCriteriaT = TypeVar("StoppingCriteriaT", bound=DynamicDataObject)
 
@@ -37,10 +39,6 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         self.stopping_criteria = stopping_criteria
         """Stopping criteria for the experiment."""
 
-        # Log
-        self._method_call_log: list[dict[str, Any]] = []
-        """A list of dictionaries containing method call logs."""
-
         # Output data
         self.experiment_summary = ExperimentSummary(name)
         """Summary of the experiment, including method call logs and elapsed time."""
@@ -53,8 +51,11 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         """
         self._working_dir_path: Optional[Path] = None
         """Path to the working directory where output files are stored."""
-        self._routine_name_stack: list[str] = []
-        """Stack of routine names to keep track of the current context."""
+        self._method_context_mgr = MethodContextManager()
+        """
+        Context manager for method calls, used to track the current routine name
+        and manage method call contexts.
+        """
         self._random_seed: Optional[int] = None
         """Random seed for reproducibility."""
 
@@ -68,26 +69,65 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         self._working_dir_path = Path(dir_path)
         self._working_dir_path.mkdir(parents=True, exist_ok=True)
 
+    def _get_call_context_of_current_method(self) -> str:
+        """
+        Returns:
+            str: A string representing the current method context,
+            formatted as "count-name.count-name..." for each name in the call stack.
+        """
+        return self._method_context_mgr.context_of_current_method
+
     def get_current_routine_name(self) -> str:
-        return self._routine_name_stack[-1] if self._routine_name_stack else "unknown"
+        warn(
+            "get_current_routine_name() is deprecated."
+            " Use _get_context_of_current_method() instead."
+        )
+        return self._get_call_context_of_current_method()
 
     def get_file_path_for_subroutine(self, filename_suffix: str) -> Path:
-        routine_name = self.get_current_routine_name()
+        """Get the file path for a subroutine output file.
+
+        - If the working directory is set, the file path is constructed by
+          combining the working directory path with the current method context
+          name and the provided filename suffix.
+        - If the working directory is not set, an AttributeError is raised.
+
+        This method is useful for generating file paths for output files related
+        to the execution of subroutines in the experiment.
+
+        Args:
+            filename_suffix (str): The suffix to append to the file name.
+
+        Raises:
+            AttributeError: If the working directory path is not set.
+
+        Returns:
+            Path: The constructed file path for the subroutine output file.
+        """
+
         if self._working_dir_path is None:
             raise AttributeError("Working directory path is not set.")
-        return self._working_dir_path / (routine_name + filename_suffix)
+        filename = self._get_call_context_of_current_method() + filename_suffix
+        return self._working_dir_path / filename
 
     def run(self):
-        self.execute_routine(self._subroutine_flow)
+        self._run_flow(self._subroutine_flow)
         self.post_run_process()
 
-    def execute_routine(self, routine_data: DynamicDataObject, prefix: str = ""):
+    def _run_flow(self, routine_data: DynamicDataObject):
+        """
+        Runs the subroutine flow defined by routine_data.
+        Handles both sequences and single subroutine steps.
+        Checks stopping condition before each execution.
+
+        Args:
+            routine_data (DynamicDataObject): Subroutine flow data.
+        """
         if isinstance(routine_data, Sequence) and not isinstance(
             routine_data, (str, bytes)
         ):
-            for i, subroutine_data in enumerate(routine_data, start=1):
-                name_prefix = f"{prefix}.{i}" if prefix else str(i)
-                self.execute_routine(subroutine_data, prefix=name_prefix)
+            for subroutine_data in routine_data:
+                self._run_flow(subroutine_data)
         else:  # is an dict-like object
             if self.is_stopping_condition():
                 return
@@ -96,43 +136,53 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
                 routine_data.to_obj()
             )
 
-            routine_name = f"{prefix}_{method_name}" if prefix else method_name
-            self._routine_name_stack.append(routine_name)
-            self.call_method(method_name, **kwargs_dict)
-            self._routine_name_stack.pop()
+            self._method_context_mgr.push(method_name)
+            self._call_method(method_name, **kwargs_dict)
+            self._method_context_mgr.pop()
 
-    def call_method(self, method_name: str, **kwargs: dict[str, Any]):
+    def _call_method(self, method_name: str, **kwargs: dict[str, Any]):
+        """Dynamically calls a method by its name with the provided keyword arguments.
+
+        This method:
+        - Manages the context of method calls by pushing the method name onto the call stack.
+        - Records the start time and logs the elapsed time for each method call.
+        - Handles exceptions by logging errors and re-raising them.
+        - Tracks the execution flow of the subroutine controller.
+        - Records the method call in the experiment summary.
+
+        Notes:
+        - The method name must correspond to a valid method defined in the subclass.
+        - Raises an AttributeError if the method does not exist.
+        - Useful for executing subroutines defined in the subroutine flow of the experiment.
+        """
+
         if not hasattr(self, method_name):
             raise AttributeError(
                 f"{self.__class__.__name__} has no attribute {method_name}"
             )
-        method_start_sec = self.timer.get_elapsed_sec()
+        start_sec = self.timer.get_elapsed_sec()
         self.experiment_summary.record_method_call(method_name)
 
         log_entry: dict[str, Any] = {
-            "routine_name": self.get_current_routine_name(),
             "method": method_name,
-            "start_sec": method_start_sec,
+            "call_context": self._get_call_context_of_current_method(),
+            "start_sec": start_sec,
             "kwargs": kwargs,
         }
         try:
             getattr(self, method_name)(**kwargs)
         except Exception as e:
-            elapsed_sec = self.timer.get_elapsed_sec() - method_start_sec
+            end_sec = self.timer.get_elapsed_sec()
+            elapsed_sec = end_sec - start_sec
             log_entry["elapsed_sec"] = elapsed_sec
             log_entry["error"] = str(e)
-            self._add_method_call_log_entry(log_entry)
-            raise
+            logging.error(str(log_entry))
+            raise e
 
-        elapsed_sec = self.timer.get_elapsed_sec() - method_start_sec
+        end_sec = self.timer.get_elapsed_sec()
+        elapsed_sec = end_sec - start_sec
         log_entry["elapsed_sec"] = elapsed_sec
-        self._add_method_call_log_entry(log_entry)
-
-    def _add_method_call_log_entry(self, log_entry: dict[str, Any]):
-        self._method_call_log.append(log_entry)
-
-    def get_method_call_log(self) -> list[dict[str, Any]]:
-        return self._method_call_log.copy()
+        logging.info(str(log_entry))
 
     @abstractmethod
     def is_stopping_condition(self) -> bool:
@@ -172,8 +222,9 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
             n_repeats (int): Number of times to repeat the routine.
             routine_data (DynamicDataObject): The routine data to be executed.
         """
-        last_routine_name = self.get_current_routine_name()
-        zero_fill_width = len(str(n_repeats))
+
+        subroutine_name = "reps"  # TODO: define how to manage this
+
         for i in range(n_repeats):
             if self.is_stopping_condition():
                 logging.info(
@@ -182,9 +233,6 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
                 break
             logging.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
 
-            prefix = f"{last_routine_name}-{str(i + 1).zfill(zero_fill_width)}"
-            self._routine_name_stack.append(prefix)
-            self.execute_routine(
-                DynamicDataObject.from_obj(routine_data), prefix=prefix
-            )
-            self._routine_name_stack.pop()
+            self._method_context_mgr.push(subroutine_name)
+            self._run_flow(DynamicDataObject.from_obj(routine_data))
+            self._method_context_mgr.pop()
