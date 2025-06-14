@@ -105,17 +105,26 @@ class MetricTimeSeries(Generic[Numeric]):
         if self._last_value is None or value < self._last_value:
             self.add(timestamp, value, note=note)
 
-    def repeat_last_value(self, timestamp: float, note: Any = None):
+    def repeat_last_value(
+        self, timestamp: float, note: Any = None, overwrite_note: bool = False
+    ):
         """
         Add the last value at the given timestamp.
         If the series is empty, it will not add anything.
+        If the timestamp already exists, the note may be overwritten depending on `overwrite_note`.
 
         Args:
             timestamp (float): _timestamp_ of the entry.
             note (Any, optional): Additional information about the entry.
+            overwrite_note (bool, optional): If True, the note will be overwritten if it already exists.
+                Defaults to False, meaning it will not overwrite if the note already exists.
         """
         if self._last_value is not None:
-            self.add(timestamp, self._last_value, note=note)
+            if timestamp in self._timestamp_note_map and not overwrite_note:
+                note_to_use = self._timestamp_note_map[timestamp]
+            else:
+                note_to_use = note
+            self.add(timestamp, self._last_value, note=note_to_use)
 
     # I/O from/to dict
 

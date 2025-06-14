@@ -104,7 +104,13 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         """
         self.get_or_create(name).add_if_value_stl_last(timestamp, value, note=note)
 
-    def repeat_last_value(self, name: str, timestamp: float, note: Any = None):
+    def repeat_last_value(
+        self,
+        name: str,
+        timestamp: float,
+        note: Any = None,
+        overwrite_note: bool = False,
+    ):
         """
         Repeat the last value in the MetricTimeSeries with the given name.
         If the MetricTimeSeries does not exist, nothing happens.
@@ -113,9 +119,13 @@ class NamedTimeSeriesStore(Generic[Numeric]):
             name (str): Name of the MetricTimeSeries to which the entry will be added.
             timestamp (float): _timestamp_ of the entry.
             note (Any, optional): Additional information about the entry.
+            overwrite_note (bool, optional): If True, the last value will be overwritten.
+                Defaults to False, meaning it will not overwrite if the last value already exists.
         """
         if name in self._store:
-            self._store[name].repeat_last_value(timestamp, note=note)
+            self._store[name].repeat_last_value(
+                timestamp, note=note, overwrite_note=overwrite_note
+            )
         else:
             warnings.warn(f"No time series with name '{name}' to repeat_last.")
 
