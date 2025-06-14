@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Generic, Optional
 
-from ..typevars import Numeric
+from ..type_hints import Numeric
 
 
 class MetricTimeSeries(Generic[Numeric]):

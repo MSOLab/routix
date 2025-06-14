@@ -4,7 +4,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Generic, Optional
 
-from ..typevars import Numeric
+from ..type_hints import Numeric
 from .metric_time_series import MetricTimeSeries
 
 
