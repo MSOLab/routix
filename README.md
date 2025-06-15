@@ -2,23 +2,22 @@
 
 Routix is a lightweight Python toolkit for designing and executing structured algorithmic workflows.
 
-It provides:
+## Key Features
 
-- Subroutine-based execution control (`SubroutineController`)
-- Structured flow validation (`SubroutineFlowValidator`)
-- Dot-accessible configuration trees (`DynamicDataObject`)
-- Logging with routine-context traceability
-- Experiment summary and timing support
-- Abstract base classes for runners in `src/routix/runner/` for extensible workflow execution patterns
+- **Subroutine-based execution control**: Flexible workflow management via `SubroutineController`
+  - **Context-aware logging**: Detailed logging with routine context traceability via `MethodContextManager`
+- **Structured flow validation**: Validate workflow definitions with `SubroutineFlowValidator`
+- **Dot-accessible configuration/data objects**: Manage hierarchical data and configuration with `DynamicDataObject`
+- **Experiment summary and timing**: Manage experiment results and timing with `ExperimentSummary`, `ElapsedTimer`, etc.
+- **Extensible runner base classes**: Build custom workflow runners (single/multi/concurrent) in `src/routix/runner/`
+- **Metric time series management**: Collect and store time series data during experiments with `MetricTimeSeries` and `NamedTimeSeriesStore`
+- **Utilities**: Tools for saving results/configuration as YAML/JSON and more
 
 ## Subroutine Flow Data Format
 
-Routix executes algorithmic workflows based on a structured and validated subroutine flow.
-Each step in the flow is represented by a dictionary with clearly defined keys,
-enabling modular orchestration, logging, and reproducibility.
+Routix executes workflows defined as structured lists of dictionaries. Each step is clearly specified with method names and parameters.
 
 ```yaml
-# my_flow.yaml
 - method: initialize
 - method: repeat
   params:
@@ -29,21 +28,32 @@ enabling modular orchestration, logging, and reproducibility.
           value: 42
 ```
 
-For more details, refer to [subroutine_flow_data.md](./subroutine_flow_data.md).
+See [`subroutine_flow_data.md`](./subroutine_flow_data.md) for details.
 
-## Abstract base classes for runners
+## Runner Base Classes
 
-Classes in `routix.runner` are extensible abstract base classes for implementing custom workflow runners. These classes provide a foundation for building repeatable, modular, and testable execution patterns for algorithmic experiments.
+- **SingleInstanceRunner**: Abstract base for running a single problem instance
+- **MultiInstanceRunner**: Abstract base for running multiple instances in sequence
+- **MultiInstanceConcurrentRunner**: Abstract base for running multiple instances concurrently (in parallel)
 
-- **`SingleInstanceRunner`**: An abstract base class for running a single problem instance. It provides a template for implementing the logic for one experiment, including setup, execution, and result collection.
-  - Typical usage: custom solvers, single-run experiments, or as a building block for higher-level runners.
-- **`MultiInstanceRunner`**: An abstract base class for running multiple problem instances. It defines the interface and core logic for iterating over multiple instances, managing results, and integrating with experiment summaries.
-  - Typical usage: batch experiments, benchmarking, or automated evaluation over a dataset.
-- **`MultiInstanceConcurrentRunner`**: An abstract base class for running multiple problem instances concurrently (in parallel). It extends the multi-instance execution pattern to support concurrent processing, enabling faster experimentation and efficient use of computational resources.
-  - Typical usage: parallel batch experiments, multi-core benchmarking, or scenarios where multiple instances should be solved simultaneously.
+All runners are designed for subclassing and method overriding to fit your experiment patterns.
 
 > **Note:** `InstanceSetRunner` is a deprecated name. Please use **`MultiInstanceRunner`** instead.
 
-Both classes are designed to be subclassed and extended. You can implement your own runner by inheriting from these base classes and overriding the required methods to fit your workflow.
+## Metric Time Series
 
-For implementation details, see the source files in `src/routix/runner/`.
+- **MetricTimeSeries**: Manages (timestamp, value, note) time series data
+- **NamedTimeSeriesStore**: Stores and manages multiple named MetricTimeSeries
+
+This enables structured recording of experiment metrics, with export to YAML/JSON supported.
+
+## Utilities
+
+- `object_to_yaml`, `object_to_json`: Save experiment results and configuration to files
+- Additional helpers for experiment management
+
+## Testing
+
+Unit tests for all major components are included in the `tests/` directory. Run all tests with pytest.
+
+---
