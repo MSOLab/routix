@@ -203,3 +203,37 @@ class MetricTimeSeries(Generic[Numeric]):
         with open(file_path, "r", encoding=encoding) as file:
             data = yaml.safe_load(file)
         return cls.from_dict(data)
+
+    # I/O from/to JSON
+
+    def save_json(self, file_path: Path | str, encoding: str = "utf-8"):
+        """Save the MetricTimeSeries to a JSON file.
+
+        Args:
+            file_path (Path | str): Path to the JSON file.
+            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
+        """
+        import json
+
+        with open(file_path, "w", encoding=encoding) as file:
+            json.dump(self.to_dict(), file, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def load_json(
+        cls, file_path: Path | str, encoding: str = "utf-8"
+    ) -> "MetricTimeSeries":
+        """
+        Load a MetricTimeSeries from a JSON file.
+
+        Args:
+            file_path (Path | str): Path to the JSON file.
+            encoding (str, optional): Encoding to use when reading the file. Defaults to "utf-8".
+
+        Returns:
+            MetricTimeSeries: The loaded MetricTimeSeries instance.
+        """
+        import json
+
+        with open(file_path, "r", encoding=encoding) as file:
+            data = json.load(file)
+        return cls.from_dict(data)

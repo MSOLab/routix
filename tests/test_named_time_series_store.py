@@ -90,3 +90,17 @@ def test_yaml_roundtrip(tmp_path: Path):
     loaded = NamedTimeSeriesStore[float].load_yaml(file_path)
     assert loaded.get_last_value_dict() == store.get_last_value_dict()
     assert loaded.name_set() == store.name_set()
+
+
+def test_json_roundtrip(tmp_path: Path):
+    store = NamedTimeSeriesStore[float]()
+    store.add_entry("obj_val", 0.0, 123.0)
+    store.add_entry("obj_val", 1.0, 111.0)
+    store.add_entry("obj_bound", 0.0, 1000.0)
+
+    file_path = tmp_path / "store.json"
+    store.save_json(file_path)
+
+    loaded = NamedTimeSeriesStore[float].load_json(file_path)
+    assert loaded.get_last_value_dict() == store.get_last_value_dict()
+    assert loaded.name_set() == store.name_set()

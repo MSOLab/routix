@@ -78,3 +78,16 @@ def test_yaml_save_and_load(tmp_path: Path):
     loaded = MetricTimeSeries.load_yaml(filepath)
     assert loaded.name == "yaml_test"
     assert loaded.items() == [(1.0, 10.0), (2.0, 20.0)]
+
+
+def test_json_save_and_load(tmp_path: Path):
+    mts = MetricTimeSeries[float]("json_test")
+    mts.add(1.0, 10, note="first")
+    mts.add(2.0, 20, note={"info": "second"})
+
+    filepath = tmp_path / "series.json"
+    mts.save_json(filepath)
+
+    loaded = MetricTimeSeries.load_json(filepath)
+    assert loaded.name == "json_test"
+    assert loaded.items() == [(1.0, 10.0), (2.0, 20.0)]

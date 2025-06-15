@@ -206,3 +206,36 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         with open(file_path, "r", encoding=encoding) as file:
             data = yaml.safe_load(file)
         return cls.from_dict(data)
+
+    # I/O from/to JSON
+
+    def save_json(self, file_path: Path | str, encoding: str = "utf-8"):
+        """Save the store to a JSON file.
+
+        Args:
+            file_path (str): Path to the JSON file where the store will be saved.
+            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
+        """
+        import json
+
+        with open(file_path, "w", encoding=encoding) as file:
+            json.dump(self.to_dict(), file)
+
+    @classmethod
+    def load_json(
+        cls, file_path: Path | str, encoding: str = "utf-8"
+    ) -> NamedTimeSeriesStore[Numeric]:
+        """Load a NamedTimeSeriesStore from a JSON file.
+
+        Args:
+            file_path (str): Path to the JSON file from which the store will be loaded.
+            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
+
+        Returns:
+            NamedTimeSeriesStore[Numeric]: An instance of NamedTimeSeriesStore populated with the data.
+        """
+        import json
+
+        with open(file_path, "r", encoding=encoding) as file:
+            data = json.load(file)
+        return cls.from_dict(data)
