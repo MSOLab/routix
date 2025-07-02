@@ -1,16 +1,18 @@
+import time
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
+from warnings import warn
 
 
 class ElapsedTimer:
     """Utility class to track elapsed time and provide formatted timestamps."""
 
-    __slots__ = ("_start_dt", "_start_time_in_seconds")
+    __slots__ = ("_start_dt", "_start_monotonic")
 
     _start_dt: datetime
     """Datetime object of start time"""
-    _start_time_in_seconds: float
-    """POSIX timestamp of start time"""
+    _start_monotonic: float
+    """Monotonic timer value at start"""
     _dir_name_format: str = "%Y%m%dT%H%M%S_%f"
     """Format for directory names based on start time"""
 
@@ -28,7 +30,7 @@ class ElapsedTimer:
             start_dt (datetime): Datetime object of start time
         """
         self._start_dt = start_dt
-        self._start_time_in_seconds = start_dt.timestamp()
+        self._start_monotonic = time.monotonic()
 
     def set_start_time_as_now(self):
         """Sets the start time of the timer to the current time."""
@@ -56,14 +58,13 @@ class ElapsedTimer:
         return self.get_start_dt_isoformatted()
 
     def get_start_dt_isoformatted(
-        self, isoformat_kwargs: Optional[dict[str, Any]] = None
+        self, isoformat_kwargs: dict[str, Any] | None = None
     ) -> str:
-        """
-        Returns the start datetime formatted as an ISO 8601 string.
+        """Returns the start datetime formatted as an ISO 8601 string.
 
         Args:
-            isoformat_kwargs (dict[str, Any], optional): Additional keyword arguments for the isoformat method.
-                                                         If None, defaults to {"timespec": "milliseconds"}.
+            isoformat_kwargs (dict[str, Any] | None, optional): Additional keyword arguments for the isoformat method.
+                If None, use {"timespec": "milliseconds"}.
 
         Returns:
             str: Formatted start datetime string.
@@ -104,7 +105,10 @@ class ElapsedTimer:
         """
         try:
             self._start_dt = datetime.strptime(dir_name, self._dir_name_format)
-            self._start_time_in_seconds = self._start_dt.timestamp()
+            # compute how much time has already elapsed since dt
+            elapsed_since_dt = datetime.now().timestamp() - self._start_dt.timestamp()
+            # adjust monotonic baseline so that elapsed_sec reflects dt-origin
+            self._start_monotonic = time.monotonic() - elapsed_since_dt
         except ValueError as e:
             raise ValueError(
                 f"Invalid directory name format for start datetime: {dir_name}"
@@ -118,21 +122,18 @@ class ElapsedTimer:
         Returns:
             float: Seconds elapsed since the timer was initiated.
         """
-        return self.get_current_time_in_seconds() - self._start_time_in_seconds
-
-    @staticmethod
-    def get_current_time_in_seconds() -> float:
-        """
-        Returns:
-            float: datetime.datetime.now().timestamp()
-        """
-        return datetime.now().timestamp()
+        return time.monotonic() - self._start_monotonic
 
     def get_elapsed_sec(self) -> float:
         """
         Returns:
             float: Seconds elapsed since the handler was initiated
         """
+        warn(
+            "get_elapsed_sec() is deprecated, use elapsed_sec property instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.elapsed_sec
 
     def get_formatted_elapsed_time(self) -> str:
@@ -150,7 +151,7 @@ class ElapsedTimer:
         Returns:
             float: Remaining seconds (never negative).
         """
-        return max(timelimit - self.get_elapsed_sec(), 0.0)
+        return max(timelimit - self.elapsed_sec, 0.0)
 
     def time_over(self, timelimit: float) -> bool:
         """
@@ -162,4 +163,4 @@ class ElapsedTimer:
         Returns:
             bool: True if the elapsed time exceeds the time limit, False otherwise.
         """
-        return self.get_elapsed_sec() > timelimit
+        return self.elapsed_sec > timelimit

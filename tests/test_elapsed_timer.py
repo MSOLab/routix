@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 
-from routix import ElapsedTimer
+from src.routix.elapsed_timer import ElapsedTimer
 
 
 def test_elapsed_timer_initialization():
@@ -14,7 +14,7 @@ def test_elapsed_timer_initialization():
 def test_elapsed_and_remaining():
     timer = ElapsedTimer()
     time.sleep(0.05)
-    elapsed = timer.get_elapsed_sec()
+    elapsed = timer.elapsed_sec
     # elapsed should be around 0.05, allow a bit more for slow machines
     assert 0.03 < elapsed < 0.2
 
