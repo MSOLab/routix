@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Generic, Optional
+from typing import Any, Generic
 
 from ..type_hints import Numeric
 from .metric_time_series import MetricTimeSeries
@@ -39,13 +39,13 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         """
         return set(self._store.keys())
 
-    def _get(self, name: str) -> Optional[MetricTimeSeries[Numeric]]:
+    def _get(self, name: str) -> MetricTimeSeries[Numeric] | None:
         """
         Args:
             name (str): Name of the MetricTimeSeries to retrieve.
 
         Returns:
-            Optional[MetricTimeSeries[Numeric]]: The MetricTimeSeries instance if found,
+            MetricTimeSeries[Numeric] | None: The MetricTimeSeries instance if found,
                 otherwise None.
         """
         return self._store.get(name, None)
@@ -129,7 +129,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         else:
             warnings.warn(f"No time series with name '{name}' to repeat_last.")
 
-    def get_last_value_dict(self) -> dict[str, Optional[Numeric]]:
+    def get_last_value_dict(self) -> dict[str, Numeric | None]:
         """
         Get the last values of all MetricTimeSeries in the store.
         This method returns a dictionary where the keys are the names of the MetricTimeSeries
@@ -137,7 +137,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         the value will be None.
 
         Returns:
-            dict[str, Optional[Numeric]]: names -> their last values.
+            dict[str, Numeric | None]: names -> their last values.
         """
         return {name: ts.last_value for name, ts in self._store.items()}
 

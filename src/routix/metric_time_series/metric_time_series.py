@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Generic, Optional
+from typing import Any, Generic
 
 from ..type_hints import Numeric
 
@@ -16,9 +16,9 @@ class MetricTimeSeries(Generic[Numeric]):
         self.name = name
         self._timestamp_value_map: dict[float, Numeric] = {}
         """timestamp -> value"""
-        self._last_timestamp: Optional[float] = None
+        self._last_timestamp: float | None = None
         """Last timestamp in the time series."""
-        self._last_value: Optional[Numeric] = None
+        self._last_value: Numeric | None = None
         """Last value in the time series."""
         self._timestamp_note_map: dict[float, Any] = {}
         """
@@ -65,12 +65,12 @@ class MetricTimeSeries(Generic[Numeric]):
         return self.time_sorted_values
 
     @property
-    def last_timestamp(self) -> Optional[float]:
+    def last_timestamp(self) -> float | None:
         """Return the last timestamp in the time series."""
         return self._last_timestamp
 
     @property
-    def last_value(self) -> Optional[Numeric]:
+    def last_value(self) -> Numeric | None:
         """Return the last value in the time series."""
         return self._last_value
 
