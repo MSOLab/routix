@@ -2,19 +2,21 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generic, Optional, Sequence, TypeVar
+from typing import Any, Generic, Sequence, TypeVar
 from warnings import warn
 
 from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
-from .experiment_summary import ExperimentSummary
 from .method_context_manager import MethodContextManager
+from .report import (
+    SubroutineReportRecorder,
+    SubroutineReportT,
+)
+from .stopping_criteria import StoppingCriteriaT
 
-StoppingCriteriaT = TypeVar("StoppingCriteriaT", bound=DynamicDataObject)
 
-
-class SubroutineController(Generic[StoppingCriteriaT], ABC):
+class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
     """
     Base class for subroutine controllers using routine name context stack.
     """
@@ -40,8 +42,10 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         """Stopping criteria for the experiment."""
 
         # Output data
-        self.experiment_summary = ExperimentSummary(name)
-        """Summary of the experiment, including method call logs and elapsed time."""
+        self.report_recorder: SubroutineReportRecorder[SubroutineReportT] = (
+            SubroutineReportRecorder(name)
+        )
+        """Counts method calls and records subroutine reports during experiment execution."""
 
         # Subroutine controller state
         self.timer = e_timer
@@ -49,14 +53,14 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         Timer to measure elapsed time during the experiment.
         This is set to the current time when the experiment starts.
         """
-        self._working_dir_path: Optional[Path] = None
+        self._working_dir_path: Path | None = None
         """Path to the working directory where output files are stored."""
         self._method_context_mgr = MethodContextManager()
         """
         Context manager for method calls, used to track the current routine name
         and manage method call contexts.
         """
-        self._random_seed: Optional[int] = None
+        self._random_seed: int | None = None
         """Random seed for reproducibility."""
 
     def set_working_dir(self, dir_path: Path | str):
@@ -160,8 +164,8 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
             raise AttributeError(
                 f"{self.__class__.__name__} has no attribute {method_name}"
             )
-        start_sec = self.timer.get_elapsed_sec()
-        self.experiment_summary.record_method_call(method_name)
+        start_sec = self.timer.elapsed_sec
+        self.report_recorder.increment_method_call_count(method_name)
 
         log_entry: dict[str, Any] = {
             "method": method_name,
@@ -172,25 +176,39 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         try:
             getattr(self, method_name)(**kwargs)
         except Exception as e:
-            end_sec = self.timer.get_elapsed_sec()
+            end_sec = self.timer.elapsed_sec
             elapsed_sec = end_sec - start_sec
             log_entry["elapsed_sec"] = elapsed_sec
             log_entry["error"] = str(e)
             logging.error(str(log_entry))
             raise e
 
-        end_sec = self.timer.get_elapsed_sec()
+        end_sec = self.timer.elapsed_sec
         elapsed_sec = end_sec - start_sec
         log_entry["elapsed_sec"] = elapsed_sec
         logging.info(str(log_entry))
 
     @abstractmethod
     def is_stopping_condition(self) -> bool:
-        pass
+        """
+        Checks if the stopping condition for the subroutine controller is met.
+        This method should be implemented in subclasses.
+        Utilizing stopping_criteria is recommended.
+
+        Returns:
+            bool: True if the stopping condition is met, False otherwise.
+        """
+        ...
 
     @abstractmethod
     def post_run_process(self):
-        pass
+        """
+        Define processes after subroutine flow or stopping condition.
+        This method should be implemented in subclasses.
+
+        For example, you may check the incumbent solution's feasibility.
+        """
+        ...
 
     def set_random_seed(self, seed: int):
         """
@@ -205,12 +223,12 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
         random.seed(seed)
 
     @property
-    def random_seed(self) -> Optional[int]:
+    def random_seed(self) -> int | None:
         """
         Returns the current random seed.
 
         Returns:
-            Optional[int]: The random seed if set, otherwise None.
+            int | None: The random seed if set, otherwise None.
         """
         return self._random_seed
 
@@ -236,3 +254,10 @@ class SubroutineController(Generic[StoppingCriteriaT], ABC):
             self._method_context_mgr.push(subroutine_name)
             self._run_flow(DynamicDataObject.from_obj(routine_data))
             self._method_context_mgr.pop()
+
+
+SubroutineControllerT = TypeVar("SubroutineControllerT", bound=SubroutineController)
+"""
+Type variable for SubroutineController, allowing methods to specify
+that they return or accept an instance of SubroutineController or its subclasses.
+"""

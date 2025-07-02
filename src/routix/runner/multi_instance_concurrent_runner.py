@@ -4,13 +4,14 @@ from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
 from .multi_instance_runner import MultiInstanceRunner
-from .single_instance_runner import SingleInstanceRunner
+from .single_instance_runner import SingleInstanceRunnerT
 
-ProblemT = TypeVar("ProblemT")
-RunnerT = TypeVar("RunnerT", bound=SingleInstanceRunner)
+ParametersT = TypeVar("ParametersT")  # TODO: Define elsewhere
 
 
-class MultiInstanceConcurrentRunner(MultiInstanceRunner, Generic[ProblemT, RunnerT]):
+class MultiInstanceConcurrentRunner(
+    MultiInstanceRunner, Generic[ParametersT, SingleInstanceRunnerT]
+):
     """
     Orchestrates solving a set of instances concurrently using a specified runner class.
     This class extends the InstanceSetRunner to allow for concurrent execution of
@@ -20,8 +21,8 @@ class MultiInstanceConcurrentRunner(MultiInstanceRunner, Generic[ProblemT, Runne
 
     def __init__(
         self,
-        s_i_runner_class: type[RunnerT],
-        instances: Sequence[ProblemT],
+        s_i_runner_class: type[SingleInstanceRunnerT],
+        instances: Sequence[ParametersT],
         shared_param_dict: dict,
         subroutine_flow: Any,
         stopping_criteria: Any,
@@ -71,8 +72,8 @@ class MultiInstanceConcurrentRunner(MultiInstanceRunner, Generic[ProblemT, Runne
             logging.info(f"Setting max_workers to {max_workers}")
             self._max_workers = max_workers
 
-    def _run_single(self, instance: ProblemT):
-        runner: RunnerT = self.s_i_runner_class(
+    def _run_single(self, instance: ParametersT):
+        runner: SingleInstanceRunnerT = self.s_i_runner_class(
             instance=instance,
             shared_param_dict=self.shared_param_dict,
             subroutine_flow=self.subroutine_flow,
