@@ -3,10 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Generic
 
-from ..type_hints import Numeric
+from ..type_defs import NumericT
 
 
-class MetricTimeSeries(Generic[Numeric]):
+class MetricTimeSeries(Generic[NumericT]):
     """
     A time series that stores values associated with timestamps.
     It allows adding new entries, retrieving values, and checking the last value.
@@ -14,11 +14,11 @@ class MetricTimeSeries(Generic[Numeric]):
 
     def __init__(self, name: str):
         self.name = name
-        self._timestamp_value_map: dict[float, Numeric] = {}
+        self._timestamp_value_map: dict[float, NumericT] = {}
         """timestamp -> value"""
         self._last_timestamp: float | None = None
         """Last timestamp in the time series."""
-        self._last_value: Numeric | None = None
+        self._last_value: NumericT | None = None
         """Last value in the time series."""
         self._timestamp_note_map: dict[float, Any] = {}
         """
@@ -31,7 +31,7 @@ class MetricTimeSeries(Generic[Numeric]):
     def __len__(self):
         return len(self._timestamp_value_map)
 
-    def add(self, timestamp: float, value: Numeric, note: Any = None):
+    def add(self, timestamp: float, value: NumericT, note: Any = None):
         """Add a new entry to the time series.
         If the timestamp already exists, it will update the value.
 
@@ -47,7 +47,7 @@ class MetricTimeSeries(Generic[Numeric]):
         if note is not None:
             self._timestamp_note_map[timestamp] = note
 
-    def items(self) -> list[tuple[float, Numeric]]:
+    def items(self) -> list[tuple[float, NumericT]]:
         """Return the items in the time series as a list of tuples (timestamp, value)."""
         return sorted(self._timestamp_value_map.items())
 
@@ -57,11 +57,11 @@ class MetricTimeSeries(Generic[Numeric]):
         return sorted(self._timestamp_value_map.keys())
 
     @property
-    def time_sorted_values(self) -> list[Numeric]:
+    def time_sorted_values(self) -> list[NumericT]:
         return [self._timestamp_value_map[t] for t in sorted(self.timestamps)]
 
     @property
-    def values(self) -> list[Numeric]:
+    def values(self) -> list[NumericT]:
         return self.time_sorted_values
 
     @property
@@ -70,7 +70,7 @@ class MetricTimeSeries(Generic[Numeric]):
         return self._last_timestamp
 
     @property
-    def last_value(self) -> Numeric | None:
+    def last_value(self) -> NumericT | None:
         """Return the last value in the time series."""
         return self._last_value
 
@@ -79,7 +79,9 @@ class MetricTimeSeries(Generic[Numeric]):
         """Return the timestamp to note map."""
         return self._timestamp_note_map.copy()
 
-    def add_if_value_stg_last(self, timestamp: float, value: Numeric, note: Any = None):
+    def add_if_value_stg_last(
+        self, timestamp: float, value: NumericT, note: Any = None
+    ):
         """
         Add if given value is *strictly greather than* the last value.
         If the series is empty, it will add the value regardless.
@@ -92,7 +94,9 @@ class MetricTimeSeries(Generic[Numeric]):
         if self._last_value is None or value > self._last_value:
             self.add(timestamp, value, note=note)
 
-    def add_if_value_stl_last(self, timestamp: float, value: Numeric, note: Any = None):
+    def add_if_value_stl_last(
+        self, timestamp: float, value: NumericT, note: Any = None
+    ):
         """
         Add if given value is *strictly less than* the last value.
         If the series is empty, it will add the value regardless.

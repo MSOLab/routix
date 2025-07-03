@@ -4,11 +4,11 @@ import warnings
 from pathlib import Path
 from typing import Any, Generic
 
-from ..type_hints import Numeric
+from ..type_defs import NumericT
 from .metric_time_series import MetricTimeSeries
 
 
-class NamedTimeSeriesStore(Generic[Numeric]):
+class NamedTimeSeriesStore(Generic[NumericT]):
     """
     A store for named time series, allowing to manage multiple MetricTimeSeries instances.
     It provides methods to add entries, retrieve time series by name,
@@ -16,7 +16,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
     It is a generic class that can work with any numeric type defined in the typevars module.
     """
 
-    _store: dict[str, MetricTimeSeries[Numeric]]
+    _store: dict[str, MetricTimeSeries[NumericT]]
     """Mapping from name to MetricTimeSeries instance"""
 
     def __init__(self):
@@ -39,7 +39,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         """
         return set(self._store.keys())
 
-    def _get(self, name: str) -> MetricTimeSeries[Numeric] | None:
+    def _get(self, name: str) -> MetricTimeSeries[NumericT] | None:
         """
         Args:
             name (str): Name of the MetricTimeSeries to retrieve.
@@ -50,7 +50,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         """
         return self._store.get(name, None)
 
-    def get_or_create(self, name: str) -> MetricTimeSeries[Numeric]:
+    def get_or_create(self, name: str) -> MetricTimeSeries[NumericT]:
         """
         Retrieve a MetricTimeSeries by name,
         or create a new one if it does not exist.
@@ -62,10 +62,10 @@ class NamedTimeSeriesStore(Generic[Numeric]):
             MetricTimeSeries[Numeric]: The MetricTimeSeries instance associated with the name.
         """
         if name not in self._store:
-            self._store[name] = MetricTimeSeries[Numeric](name)
+            self._store[name] = MetricTimeSeries[NumericT](name)
         return self._store[name]
 
-    def add_entry(self, name: str, timestamp: float, value: Numeric, note: Any = None):
+    def add_entry(self, name: str, timestamp: float, value: NumericT, note: Any = None):
         """
         Add a new entry to the MetricTimeSeries with the given name.
         If the MetricTimeSeries does not exist, it will be created.
@@ -78,7 +78,9 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         """
         self.get_or_create(name).add(timestamp, value, note=note)
 
-    def add_if_stg(self, name: str, timestamp: float, value: Numeric, note: Any = None):
+    def add_if_stg(
+        self, name: str, timestamp: float, value: NumericT, note: Any = None
+    ):
         """
         Add an entry to the MetricTimeSeries if the value is *strictly greater than* the last value.
         If the MetricTimeSeries does not exist, it will be created.
@@ -91,7 +93,9 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         """
         self.get_or_create(name).add_if_value_stg_last(timestamp, value, note=note)
 
-    def add_if_stl(self, name: str, timestamp: float, value: Numeric, note: Any = None):
+    def add_if_stl(
+        self, name: str, timestamp: float, value: NumericT, note: Any = None
+    ):
         """
         Add an entry to the MetricTimeSeries if the value is *strictly less than* the last value.
         If the MetricTimeSeries does not exist, it will be created.
@@ -129,7 +133,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
         else:
             warnings.warn(f"No time series with name '{name}' to repeat_last.")
 
-    def get_last_value_dict(self) -> dict[str, Numeric | None]:
+    def get_last_value_dict(self) -> dict[str, NumericT | None]:
         """
         Get the last values of all MetricTimeSeries in the store.
         This method returns a dictionary where the keys are the names of the MetricTimeSeries
@@ -159,7 +163,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
     @classmethod
     def from_dict(
         cls, data: dict[str, dict[str, Any]]
-    ) -> NamedTimeSeriesStore[Numeric]:
+    ) -> NamedTimeSeriesStore[NumericT]:
         """Create a NamedTimeSeriesStore from a dictionary representation.
 
         Args:
@@ -191,7 +195,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
     @classmethod
     def load_yaml(
         cls, file_path: Path | str, encoding: str = "utf-8"
-    ) -> NamedTimeSeriesStore[Numeric]:
+    ) -> NamedTimeSeriesStore[NumericT]:
         """Load a NamedTimeSeriesStore from a YAML file.
 
         Args:
@@ -224,7 +228,7 @@ class NamedTimeSeriesStore(Generic[Numeric]):
     @classmethod
     def load_json(
         cls, file_path: Path | str, encoding: str = "utf-8"
-    ) -> NamedTimeSeriesStore[Numeric]:
+    ) -> NamedTimeSeriesStore[NumericT]:
         """Load a NamedTimeSeriesStore from a JSON file.
 
         Args:

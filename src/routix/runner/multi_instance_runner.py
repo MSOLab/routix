@@ -2,12 +2,11 @@ import logging
 import traceback
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Generic, Sequence, TypeVar
+from typing import Any, Generic, Sequence
 
 from ..elapsed_timer import ElapsedTimer
+from ..type_defs import ParametersT
 from .single_instance_runner import SingleInstanceRunnerT
-
-ParametersT = TypeVar("ParametersT")  # TODO: Define elsewhere
 
 
 class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):

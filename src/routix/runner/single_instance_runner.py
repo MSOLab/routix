@@ -4,8 +4,7 @@ from typing import Any, Generic, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
 from ..subroutine_controller import SubroutineControllerT
-
-ParametersT = TypeVar("ParametersT")  # TODO: Define elsewhere
+from ..type_defs import ParametersT
 
 
 class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):

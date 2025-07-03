@@ -1,12 +1,11 @@
 import concurrent.futures
 import logging
 from pathlib import Path
-from typing import Any, Generic, Sequence, TypeVar
+from typing import Any, Generic, Sequence
 
+from ..type_defs import ParametersT
 from .multi_instance_runner import MultiInstanceRunner
 from .single_instance_runner import SingleInstanceRunnerT
-
-ParametersT = TypeVar("ParametersT")  # TODO: Define elsewhere
 
 
 class MultiInstanceConcurrentRunner(
