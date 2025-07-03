@@ -1,4 +1,4 @@
-from src.routix.report.subroutine_report import SubroutineReport
+from routix.report.subroutine_report import SubroutineReport
 
 
 def test_subroutine_report_to_dict():

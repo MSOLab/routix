@@ -1,9 +1,9 @@
 import pytest
 
-from src.routix.report.subroutine_report import SubroutineReport
-from src.routix.report.subroutine_report_recorder import SubroutineReportRecorder
-from src.routix.report.subroutine_report_statistics import SubroutineReportStatistics
-from src.routix.report.subroutine_report_statistics_serializer import (
+from routix.report.subroutine_report import SubroutineReport
+from routix.report.subroutine_report_recorder import SubroutineReportRecorder
+from routix.report.subroutine_report_statistics import SubroutineReportStatistics
+from routix.report.subroutine_report_statistics_serializer import (
     SubroutineReportStatisticsSerializer,
 )
 
