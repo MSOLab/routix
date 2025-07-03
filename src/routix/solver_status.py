@@ -1,54 +1,52 @@
-class SolverStatus:
+from __future__ import annotations
+
+from enum import Enum, unique
+
+
+@unique
+class SolverStatus(Enum):
     MODEL_INVALID = "MODEL_INVALID"
     INFEASIBLE = "INFEASIBLE"
     FEASIBLE = "FEASIBLE"
     OPTIMAL = "OPTIMAL"
     UNKNOWN = "UNKNOWN"
 
-    @staticmethod
-    def all_statuses() -> set[str]:
+    @classmethod
+    def all_statuses(cls) -> set[SolverStatus]:
         """Returns a set of all defined solver statuses."""
-        return {
-            SolverStatus.MODEL_INVALID,
-            SolverStatus.INFEASIBLE,
-            SolverStatus.FEASIBLE,
-            SolverStatus.OPTIMAL,
-            SolverStatus.UNKNOWN,
-        }
+        return set(cls)
 
-    @staticmethod
-    def is_model_invalid(status: str) -> bool:
+    def is_model_invalid(self) -> bool:
         """Checks if the given status indicates an invalid model."""
-        return status == SolverStatus.MODEL_INVALID
+        return self is SolverStatus.MODEL_INVALID
 
-    @staticmethod
-    def is_infeasible(status: str) -> bool:
+    def is_infeasible(self) -> bool:
         """Checks if the given status represents an infeasible solution."""
-        return status == SolverStatus.INFEASIBLE
+        return self is SolverStatus.INFEASIBLE
 
-    @staticmethod
-    def found_feasible_solution(status: str) -> bool:
-        """Checks if a feasible solution was found based on the status string."""
-        return status in {SolverStatus.FEASIBLE, SolverStatus.OPTIMAL}
+    def found_feasible_solution(self) -> bool:
+        """Checks if a feasible solution was found based on the status."""
+        return self in {SolverStatus.FEASIBLE, SolverStatus.OPTIMAL}
 
-    @staticmethod
-    def is_optimal_solution(status: str) -> bool:
+    def is_optimal_solution(self) -> bool:
         """Checks if the given status represents an optimal solution."""
-        return status == SolverStatus.OPTIMAL
+        return self is SolverStatus.OPTIMAL
 
-    @staticmethod
-    def is_unknown(status: str) -> bool:
+    def is_unknown(self) -> bool:
         """Checks if the given status is unknown."""
-        return status == SolverStatus.UNKNOWN
+        return self is SolverStatus.UNKNOWN
 
-    @staticmethod
-    def raise_if_not_feasible(status: str) -> None:
+    @classmethod
+    def raise_if_not_feasible(cls, status: SolverStatus) -> None:
         """Raises an exception if the status indicates infeasibility."""
-        if status not in SolverStatus.all_statuses():
-            raise ValueError(f"Unknown status: {status}")
-        elif SolverStatus.is_model_invalid(status):
+        if status not in cls.all_statuses():
+            raise ValueError(f"Unrecognized status: {status}")
+        elif status.is_model_invalid():
             raise ValueError("The model is invalid.")
-        elif SolverStatus.is_infeasible(status):
+        elif status.is_infeasible():
             raise ValueError("The problem is infeasible.")
-        elif SolverStatus.is_unknown(status):
+        elif status.is_unknown():
             raise ValueError("The status is unknown.")
+
+    def __str__(self):
+        return self.value
