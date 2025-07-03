@@ -181,7 +181,8 @@ class MetricTimeSeries(Generic[NumericT]):
 
         Args:
             file_path (Path | str): Path to the YAML file.
-            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
+            encoding (str, optional): Encoding to use when writing the file.
+                Defaults to "utf-8".
         """
         from ..utils import object_to_yaml
 
@@ -196,7 +197,8 @@ class MetricTimeSeries(Generic[NumericT]):
 
         Args:
             file_path (Path | str): Path to the YAML file.
-            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
+            encoding (str, optional): Encoding to use when writing the file.
+                Defaults to "utf-8".
 
         Returns:
             MetricTimeSeries: The loaded MetricTimeSeries instance.
@@ -215,7 +217,8 @@ class MetricTimeSeries(Generic[NumericT]):
 
         Args:
             file_path (Path | str): Path to the JSON file.
-            encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
+            encoding (str, optional): Encoding to use when writing the file.
+                Defaults to "utf-8".
         """
         from ..utils import object_to_json
 
@@ -230,7 +233,8 @@ class MetricTimeSeries(Generic[NumericT]):
 
         Args:
             file_path (Path | str): Path to the JSON file.
-            encoding (str, optional): Encoding to use when reading the file. Defaults to "utf-8".
+            encoding (str, optional): Encoding to use when reading the file.
+                Defaults to "utf-8".
 
         Returns:
             MetricTimeSeries: The loaded MetricTimeSeries instance.
