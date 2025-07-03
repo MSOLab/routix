@@ -183,17 +183,16 @@ class MetricTimeSeries(Generic[NumericT]):
             file_path (Path | str): Path to the YAML file.
             encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
         """
-        import yaml
+        from ..utils import object_to_yaml
 
-        with open(file_path, "w", encoding=encoding) as file:
-            yaml.dump(self.to_dict(), file)
+        path = Path(file_path)
+        object_to_yaml(self.to_dict(), path, encoding=encoding)
 
     @classmethod
     def load_yaml(
         cls, file_path: Path | str, encoding: str = "utf-8"
     ) -> MetricTimeSeries:
-        """
-        Load a MetricTimeSeries from a YAML file.
+        """Load a MetricTimeSeries from a YAML file.
 
         Args:
             file_path (Path | str): Path to the YAML file.
@@ -204,7 +203,8 @@ class MetricTimeSeries(Generic[NumericT]):
         """
         import yaml
 
-        with open(file_path, "r", encoding=encoding) as file:
+        path = Path(file_path)
+        with path.open("r", encoding=encoding) as file:
             data = yaml.safe_load(file)
         return cls.from_dict(data)
 
@@ -217,17 +217,16 @@ class MetricTimeSeries(Generic[NumericT]):
             file_path (Path | str): Path to the JSON file.
             encoding (str, optional): Encoding to use when writing the file. Defaults to "utf-8".
         """
-        import json
+        from ..utils import object_to_json
 
-        with open(file_path, "w", encoding=encoding) as file:
-            json.dump(self.to_dict(), file, ensure_ascii=False, indent=2)
+        path = Path(file_path)
+        object_to_json(self.to_dict(), path, encoding=encoding)
 
     @classmethod
     def load_json(
         cls, file_path: Path | str, encoding: str = "utf-8"
     ) -> "MetricTimeSeries":
-        """
-        Load a MetricTimeSeries from a JSON file.
+        """Load a MetricTimeSeries from a JSON file.
 
         Args:
             file_path (Path | str): Path to the JSON file.
@@ -238,6 +237,7 @@ class MetricTimeSeries(Generic[NumericT]):
         """
         import json
 
-        with open(file_path, "r", encoding=encoding) as file:
+        path = Path(file_path)
+        with path.open("r", encoding=encoding) as file:
             data = json.load(file)
         return cls.from_dict(data)
