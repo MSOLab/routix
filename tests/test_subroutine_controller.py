@@ -5,15 +5,14 @@ import pytest
 
 from src.routix.constants import SubroutineFlowKeys
 from src.routix.dynamic_data_object import DynamicDataObject
+from src.routix.report.subroutine_report import SubroutineReport
+from src.routix.stopping_criteria import StoppingCriteria
 from src.routix.subroutine_controller import SubroutineController
 
 
-class MockStoppingCriteria(DynamicDataObject):
-    def __init__(self, data):
-        super().__init__(data)
-
-
-class MockSubroutineController(SubroutineController[MockStoppingCriteria]):
+class MockSubroutineController(
+    SubroutineController[StoppingCriteria, SubroutineReport]
+):
     def __init__(self, name, subroutine_flow, stopping_criteria, start_dt=None):
         super().__init__(name, subroutine_flow, stopping_criteria, start_dt)
         self._stop_condition_met = False
@@ -31,7 +30,7 @@ def mock_controller(tmp_path: Path) -> MockSubroutineController:
     subroutine_flow = DynamicDataObject.from_obj(
         [{SubroutineFlowKeys.METHOD: "mock_method"}]
     )
-    stopping_criteria = MockStoppingCriteria({"criteria": "value"})
+    stopping_criteria = StoppingCriteria({"criteria": "value"})
     ctrlr = MockSubroutineController(
         "test_experiment", subroutine_flow, stopping_criteria
     )

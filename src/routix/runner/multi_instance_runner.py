@@ -2,24 +2,22 @@ import logging
 import traceback
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Generic, Sequence, TypeVar
+from typing import Any, Generic, Sequence
 
 from ..elapsed_timer import ElapsedTimer
-from .single_instance_runner import SingleInstanceRunner
-
-ProblemT = TypeVar("ProblemT")
-RunnerT = TypeVar("RunnerT", bound=SingleInstanceRunner)
+from ..type_defs import ParametersT
+from .single_instance_runner import SingleInstanceRunnerT
 
 
-class MultiInstanceRunner(Generic[ProblemT, RunnerT], ABC):
+class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
     """
-    Orchestrates solving a set of instances with a given runner class.
+    Abstract runner to orchestrate solving a set of instances with a given runner class.
     """
 
     def __init__(
         self,
-        s_i_runner_class: type[RunnerT],
-        instances: Sequence[ProblemT],
+        s_i_runner_class: type[SingleInstanceRunnerT],
+        instances: Sequence[ParametersT],
         shared_param_dict: dict,
         subroutine_flow: Any,
         stopping_criteria: Any,
@@ -41,7 +39,7 @@ class MultiInstanceRunner(Generic[ProblemT, RunnerT], ABC):
         self.output_dir = output_dir
         self.output_metadata = output_metadata
 
-        self.runners: list[RunnerT] = []
+        self.runners: list[SingleInstanceRunnerT] = []
         self.results: list[Any] = []
 
         self._set_start_dt()
@@ -111,8 +109,4 @@ class MultiInstanceRunner(Generic[ProblemT, RunnerT], ABC):
         Post-processes the results after running all instances.
         This method should be implemented in subclasses to handle specific post-run logic.
         """
-        pass
-
-    def get_successful_results(self) -> list[Any]:
-        """Returns a list of non-None results."""
-        return [r for r in self.results if r is not None]
+        ...

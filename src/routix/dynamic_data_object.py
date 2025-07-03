@@ -1,6 +1,6 @@
 import json
 from pathlib import Path, PurePath
-from typing import Any, Self, Sequence
+from typing import Any, Self, Sequence, TypeVar
 
 from .utils import object_to_json, object_to_yaml
 
@@ -165,6 +165,13 @@ class DynamicDataObject:
                 raise RuntimeError(f"Error writing to file {file_path}: {e}")
         else:
             object_to_yaml(data_obj, file_path, encoding=encoding)
+
+
+DynamicDataObjectT = TypeVar("DynamicDataObjectT", bound=DynamicDataObject)
+"""
+Type variable for DynamicDataObject, allowing methods to specify
+that they return or accept an instance of DynamicDataObject or its subclasses.
+"""
 
 
 def main():

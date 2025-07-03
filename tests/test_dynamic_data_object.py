@@ -81,3 +81,39 @@ def test_json_serialization(tmp_path):
     loaded_data = DynamicDataObject.from_json(file_path)
     assert loaded_data.name == "John"
     assert loaded_data.age == 30
+
+
+def test_yaml_serialization(tmp_path):
+    import yaml
+
+    obj = {"name": "Alice", "skills": ["Python", "ML"]}
+    data = DynamicDataObject(obj)
+    file_path = tmp_path / "test.yaml"
+    data.to_yaml(file_path)
+    with open(file_path, "r", encoding="utf-8") as f:
+        loaded = yaml.safe_load(f)
+    assert loaded["name"] == "Alice"
+    assert loaded["skills"] == ["Python", "ML"]
+
+
+def test_bytes_type_raises():
+    with pytest.raises(TypeError, match="bytes type is not supported"):
+        DynamicDataObject.from_obj(b"abc")
+
+
+def test_roundtrip_nested_list_dict():
+    obj = {"items": [{"a": 1}, {"b": 2}]}
+    data = DynamicDataObject.from_obj(obj)
+    assert isinstance(data.items, list)
+    assert data.items[0].a == 1
+    assert data.items[1].b == 2
+    assert data.to_obj() == obj
+
+
+def test_equality_and_repr():
+    obj1 = {"x": 1, "y": {"z": 2}}
+    obj2 = {"x": 1, "y": {"z": 2}}
+    d1 = DynamicDataObject.from_obj(obj1)
+    d2 = DynamicDataObject.from_obj(obj2)
+    assert d1.to_obj() == d2.to_obj()
+    assert "DynamicDataObject" in repr(d1)
