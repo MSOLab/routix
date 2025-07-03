@@ -153,4 +153,4 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
         # Override dictionary
         return_dict["methodCallCounts"] = f'"{self.method_call_counts}"'
 
-        return {k: str(v) for k, v in data.items()}
+        return return_dict
