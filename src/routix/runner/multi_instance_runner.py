@@ -2,7 +2,7 @@ import logging
 import traceback
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Generic, Sequence
+from typing import Any, Generic, Sequence, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
 from ..type_defs import ParametersT
@@ -110,3 +110,10 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         This method should be implemented in subclasses to handle specific post-run logic.
         """
         ...
+
+
+MultiInstanceRunnerT = TypeVar("MultiInstanceRunnerT", bound=MultiInstanceRunner)
+"""
+Type variable for MultiInstanceRunner, allowing methods to specify
+that they return or accept an instance of MultiInstanceRunner or its subclasses.
+"""
