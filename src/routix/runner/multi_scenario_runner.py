@@ -67,7 +67,6 @@ class MultiScenarioRunner(
             )
             logging.info(f"Scenario Config: {scenario_config}")
 
-            # Each scenario might have its own subroutine_flow and stopping_criteria
             subroutine_flow = scenario_config.get("subroutine_flow")
             stopping_criteria = scenario_config.get("stopping_criteria")
 
@@ -77,11 +76,12 @@ class MultiScenarioRunner(
                 )
                 continue
 
-            # Create a dedicated output directory for the scenario
-            scenario_output_dir = self.output_dir / f"scenario_{i + 1}"
+            # Use a specific output subdir from config, or create a default one
+            scenario_output_dir = self.output_dir / scenario_config.get(
+                "output_subdir", f"scenario_{i + 1}"
+            )
             scenario_output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Create and run a MultiInstanceRunner for the current scenario
             multi_instance_runner = self.m_i_runner_class(
                 s_i_runner_class=self.s_i_runner_class,
                 instances=self.instances,
@@ -98,7 +98,7 @@ class MultiScenarioRunner(
                 result = multi_instance_runner.run()
                 self.results.append(result)
             except Exception as e:
-                logging.error(f"Error in scenario {i + 1}: {e}")
+                logging.error(f"Error in scenario {i + 1}: {e}", exc_info=True)
                 self.results.append(None)
 
             logging.info(
@@ -108,15 +108,13 @@ class MultiScenarioRunner(
         return self.post_run_process()
 
     @abstractmethod
-    def post_run_process(self):
+    def post_run_process(self) -> Any:
         """
         Post-processes the results after running all scenarios.
         This method should be implemented in subclasses to handle specific post-run logic,
         such as aggregating results from all scenarios.
         """
-        logging.info("Finished all scenarios. Aggregating results...")
-        # Implementation for result aggregation goes here.
-        pass
+        ...
 
 
 MultiScenarioRunnerT = TypeVar("MultiScenarioRunnerT", bound=MultiScenarioRunner)

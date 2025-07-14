@@ -64,16 +64,10 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
     def _init_working_dir(self) -> None:
         """
         Initialize the working directory for the instance run.
-        This method creates a directory structure based on the output directory,
-        elapsed timer start time, and instance name if available.
 
-        - If the output directory name does not match the formatted start date-time,
-        it creates a subdirectory with the formatted start date-time.
-        - If an instance name is provided, it creates a further subdirectory for the instance.
+        The working directory is a subdirectory of the output_dir, named after the instance.
         """
         self.working_dir = self.output_dir
-        if self.output_dir.name != self.e_timer.get_start_dt_for_dir_name():
-            self.working_dir /= self.e_timer.get_start_dt_for_dir_name()
         if self.ins_name is not None:
             self.working_dir /= self.ins_name
         self.working_dir.mkdir(parents=True, exist_ok=True)
