@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
-from ..type_defs import ParametersT
+from ..type_defs import ParametersT, RunMode
 from .multi_instance_runner import MultiInstanceRunnerT
 from .single_instance_runner import SingleInstanceRunnerT
 
@@ -17,6 +17,8 @@ class MultiScenarioRunner(
     is a set of instances executed by a MultiInstanceRunner.
     """
 
+    mode: RunMode
+
     def __init__(
         self,
         m_i_runner_class: type[MultiInstanceRunnerT],
@@ -26,11 +28,12 @@ class MultiScenarioRunner(
         scenario_configs: Sequence[dict[str, Any]],
         output_dir: Path,
         base_output_metadata: dict[str, Any],
+        mode: RunMode = RunMode.FULL_RUN,
     ):
         # Set up the elapsed timer
         self.e_timer = ElapsedTimer()
 
-        # InstanceRunners
+        # Runner classes
         self.m_i_runner_class = m_i_runner_class
         self.s_i_runner_class = s_i_runner_class
 
@@ -38,12 +41,15 @@ class MultiScenarioRunner(
         self.instances = instances
         self.shared_param_dict = shared_param_dict
 
-        # Algorithm data
+        # Scenario configurations
         self.scenario_configs = scenario_configs
 
-        # Output data
+        # Output configuration
         self.output_dir = output_dir
         self.base_output_metadata = base_output_metadata
+
+        # Execution configuration
+        self.mode = mode
 
         self.runners: list[MultiInstanceRunnerT] = []
         self.results: list[Any] = []
@@ -84,6 +90,7 @@ class MultiScenarioRunner(
                 stopping_criteria=stopping_criteria,
                 output_dir=scenario_output_dir,
                 output_metadata=self.base_output_metadata.copy(),
+                mode=self.mode,
             )
 
             self.runners.append(multi_instance_runner)

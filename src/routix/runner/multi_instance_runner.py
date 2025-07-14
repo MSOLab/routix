@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
-from ..type_defs import ParametersT
+from ..type_defs import ParametersT, RunMode
 from .single_instance_runner import SingleInstanceRunnerT
 
 
@@ -13,6 +13,8 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
     """
     Abstract runner to orchestrate solving a set of instances with a given runner class.
     """
+
+    mode: RunMode
 
     def __init__(
         self,
@@ -23,21 +25,28 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         stopping_criteria: Any,
         output_dir: Path,
         output_metadata: dict[str, Any],
+        mode: RunMode = RunMode.FULL_RUN,
     ):
-        # Set up the elapsed timer
         self.e_timer = ElapsedTimer()
+        """Elapsed timer for multi-instance run."""
 
-        # SingleInstanceRunner
+        # Runner class
         self.s_i_runner_class = s_i_runner_class
+
         # Instance data
         self.instances = instances
         self.shared_param_dict = shared_param_dict
+
         # Algorithm data
         self.subroutine_flow = subroutine_flow
         self.stopping_criteria = stopping_criteria
-        # Output data
+
+        # Output configuration
         self.output_dir = output_dir
         self.output_metadata = output_metadata
+
+        # Execution configuration
+        self.mode = mode
 
         self.runners: list[SingleInstanceRunnerT] = []
         self.results: list[Any] = []
@@ -75,13 +84,6 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         self.runners.clear()
         self.results.clear()
 
-        instance_set_skip_run_do_post_process = self.output_metadata.get(
-            "instance_set_skip_run_do_post_process", False
-        )
-        if instance_set_skip_run_do_post_process:
-            # If skip run is set, skip the run and directly do post-process
-            return self.post_run_process()
-
         for idx, instance in enumerate(self.instances):
             runner = self.s_i_runner_class(
                 instance=instance,
@@ -90,12 +92,12 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
                 stopping_criteria=self.stopping_criteria,
                 output_dir=self.output_dir,
                 output_metadata=self.output_metadata,
+                mode=self.mode,
             )
             self.runners.append(runner)
             try:
                 result = runner.run()
             except Exception as e:
-                # Handle or log error, append None or an error object as appropriate
                 logging.error(f"Error in instance {idx}: {e}")
                 traceback.print_exc()
                 result = None
@@ -104,7 +106,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         return self.post_run_process()
 
     @abstractmethod
-    def post_run_process(self):
+    def post_run_process(self) -> Any:
         """
         Post-processes the results after running all instances.
         This method should be implemented in subclasses to handle specific post-run logic.

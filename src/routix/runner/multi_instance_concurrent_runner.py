@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any, Generic, Sequence
 
-from ..type_defs import ParametersT
+from ..type_defs import ParametersT, RunMode
 from .multi_instance_runner import MultiInstanceRunner
 from .single_instance_runner import SingleInstanceRunnerT
 
@@ -27,6 +27,7 @@ class MultiInstanceConcurrentRunner(
         stopping_criteria: Any,
         output_dir: Path,
         output_metadata: dict[str, Any],
+        mode: RunMode = RunMode.FULL_RUN,
     ):
         super().__init__(
             s_i_runner_class,
@@ -36,6 +37,7 @@ class MultiInstanceConcurrentRunner(
             stopping_criteria,
             output_dir,
             output_metadata,
+            mode,
         )
         self._max_workers: int = 2  # Default value for max_workers
 
@@ -71,7 +73,7 @@ class MultiInstanceConcurrentRunner(
             logging.info(f"Setting max_workers to {max_workers}")
             self._max_workers = max_workers
 
-    def _run_single(self, instance: ParametersT):
+    def _run_single(self, instance: ParametersT, mode: RunMode):
         runner: SingleInstanceRunnerT = self.s_i_runner_class(
             instance=instance,
             shared_param_dict=self.shared_param_dict,
@@ -79,6 +81,7 @@ class MultiInstanceConcurrentRunner(
             stopping_criteria=self.stopping_criteria,
             output_dir=self.output_dir,
             output_metadata=self.output_metadata,
+            mode=mode,
         )
         self.runners.append(runner)
         try:
@@ -98,13 +101,6 @@ class MultiInstanceConcurrentRunner(
         self.runners.clear()
         self.results.clear()
 
-        instance_set_skip_run_do_post_process = self.output_metadata.get(
-            "instance_set_skip_run_do_post_process", False
-        )
-        if instance_set_skip_run_do_post_process:
-            # If skip run is set, skip the run and directly do post-process
-            return self.post_run_process()
-
         with concurrent.futures.ProcessPoolExecutor(max_workers=worker_cnt) as executor:
             futures = [
                 executor.submit(
@@ -116,6 +112,7 @@ class MultiInstanceConcurrentRunner(
                     self.stopping_criteria,
                     self.output_dir,
                     self.output_metadata,
+                    self.mode,
                 )
                 for instance in self.instances
             ]
@@ -133,6 +130,7 @@ def _run_single_instance(
     stopping_criteria,
     output_dir,
     output_metadata,
+    mode: RunMode,
 ):
     runner = s_i_runner_class(
         instance=instance,
@@ -141,6 +139,7 @@ def _run_single_instance(
         stopping_criteria=stopping_criteria,
         output_dir=output_dir,
         output_metadata=output_metadata,
+        mode=mode,
     )
     try:
         return runner.run()
