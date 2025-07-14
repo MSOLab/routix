@@ -78,7 +78,8 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         self.runners.clear()
         self.results.clear()
 
-        for idx, instance in enumerate(self.instances):
+        # Pre-create all runner instances
+        for instance in self.instances:
             runner = self.s_i_runner_class(
                 instance=instance,
                 shared_param_dict=self.shared_param_dict,
@@ -89,6 +90,8 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
                 mode=self.mode,
             )
             self.runners.append(runner)
+
+        for idx, runner in enumerate(self.runners):
             try:
                 result = runner.run()
             except Exception as e:
