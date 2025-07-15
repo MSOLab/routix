@@ -54,6 +54,21 @@ class MultiScenarioRunner(
         self.runners: list[MultiInstanceRunnerT] = []
         self.results: list[Any] = []
 
+        self._set_start_dt()
+
+    def _set_start_dt(self) -> None:
+        """
+        Sets the start date-time for the elapsed timer.
+        If the start date-time is already in output_metadata, it uses that.
+        Otherwise, it initializes the start date-time from the elapsed timer.
+        """
+        if dt := self.base_output_metadata.get("start_dt"):
+            self.e_timer.set_start_time(dt)
+        else:
+            self.base_output_metadata["start_dt"] = (
+                self.e_timer.get_formatted_start_dt()
+            )
+
     def run(self):
         """
         Executes each scenario sequentially.
