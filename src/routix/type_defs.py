@@ -7,6 +7,9 @@ NumericT = TypeVar("NumericT", int, float)
 ParametersT = TypeVar("ParametersT")
 """TypeVar for parameters, can be any type"""
 
+SolutionT = TypeVar("SolutionT")
+"""A generic type variable representing any solution object."""
+
 
 class RunMode(Enum):
     """Defines the execution mode for a Runner."""

@@ -1,7 +1,6 @@
 import pytest
 
 from routix.report.subroutine_report import SubroutineReport
-from routix.report.subroutine_report_recorder import SubroutineReportRecorder
 from routix.report.subroutine_report_statistics import SubroutineReportStatistics
 
 
@@ -15,24 +14,20 @@ def sample_reports():
     ]
 
 
-def test_report_recorder_counts_and_append(sample_reports):
-    recorder = SubroutineReportRecorder("test_instance")
-    recorder.increment_method_call_count("foo")
-    recorder.increment_method_call_count("foo")
-    recorder.increment_method_call_count("bar")
-    assert recorder.method_call_counts == {"foo": 2, "bar": 1}
-    for r in sample_reports:
-        recorder.append_report(r)
-    assert recorder.reports == sample_reports
+@pytest.fixture
+def sample_method_call_counts():
+    return {"foo": 2, "bar": 1}
 
 
-def test_report_statistics_properties_and_methods(sample_reports, tmp_path):
-    recorder = SubroutineReportRecorder("test_instance")
-    for r in sample_reports:
-        recorder.append_report(r)
-    stats = SubroutineReportStatistics(recorder)
+def test_report_statistics(sample_reports, sample_method_call_counts, tmp_path):
+    stats = SubroutineReportStatistics(
+        name="test_instance",
+        reports=sample_reports,
+        method_call_counts=sample_method_call_counts,
+    )
     assert stats.name == "test_instance"
     assert stats.reports == sample_reports
+    assert stats.method_call_counts == sample_method_call_counts
     assert stats.has_valid_objective_value is True
     assert stats.first_report == sample_reports[0]
     assert stats.last_report == sample_reports[-1]
@@ -49,6 +44,11 @@ def test_report_statistics_properties_and_methods(sample_reports, tmp_path):
     assert stats.get_improvement_ratio(is_maximize=True) == pytest.approx(
         (10.0 - 10.0) / 10.0
     )
+
+    # Test serialization
+    stats_dict = stats.to_dict()
+    assert "methodCallCounts" in stats_dict
+    assert stats_dict["methodCallCounts"] == f'"{sample_method_call_counts}"'
 
     # Test JSON/YAML serialization (file creation)
     json_path = tmp_path / "report.json"

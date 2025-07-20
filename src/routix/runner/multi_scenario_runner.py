@@ -92,9 +92,12 @@ class MultiScenarioRunner(
                 continue
 
             # Use a specific output subdir from config, or create a default one
-            scenario_output_dir = self.output_dir / scenario_config.get(
-                "output_subdir", f"scenario_{i + 1}"
-            )
+            scenario_output_dir = self.output_dir / f"scenario_{i + 1}"
+            if "output_subdir" in scenario_config:
+                scenario_output_dir = self.output_dir / str(
+                    scenario_config["output_subdir"]
+                )
+
             scenario_output_dir.mkdir(parents=True, exist_ok=True)
 
             multi_instance_runner = self.m_i_runner_class(

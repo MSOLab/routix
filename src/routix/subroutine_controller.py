@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
@@ -9,10 +10,7 @@ from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
 from .method_context_manager import MethodContextManager
-from .report import (
-    SubroutineReportRecorder,
-    SubroutineReportT,
-)
+from .report import SubroutineReportT
 from .stopping_criteria import StoppingCriteriaT
 
 
@@ -41,12 +39,6 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         self.stopping_criteria = stopping_criteria
         """Stopping criteria for the experiment."""
 
-        # Output data
-        self.report_recorder: SubroutineReportRecorder[SubroutineReportT] = (
-            SubroutineReportRecorder(name)
-        )
-        """Counts method calls and records subroutine reports during experiment execution."""
-
         # Subroutine controller state
         self.timer = e_timer
         """
@@ -55,6 +47,8 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
         self._working_dir_path: Path | None = None
         """Path to the working directory where output files are stored."""
+        self.method_call_counts: dict[str, int] = defaultdict(int)
+        """Counts method calls during experiment execution."""
         self._method_context_mgr = MethodContextManager()
         """
         Context manager for method calls, used to track the current routine name
@@ -165,7 +159,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
                 f"{self.__class__.__name__} has no attribute {method_name}"
             )
         start_sec = self.timer.elapsed_sec
-        self.report_recorder.increment_method_call_count(method_name)
+        self.method_call_counts[method_name] += 1
 
         log_entry: dict[str, Any] = {
             "method": method_name,

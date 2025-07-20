@@ -1,35 +1,23 @@
-"""
-subroutine_summary_statistics.py
-
-SubroutineSummaryStatistics: Computes statistics and summary information from collected subroutine reports.
-"""
-
 from pathlib import Path
 from typing import Any, Generic
 
 from routix.utils import object_to_json, object_to_yaml
 
 from .subroutine_report import SubroutineReportT
-from .subroutine_report_recorder import SubroutineReportRecorder
 
 
 class SubroutineReportStatistics(Generic[SubroutineReportT]):
     """Computes statistics and summary information from collected subroutine reports."""
 
-    def __init__(self, recorder: SubroutineReportRecorder[SubroutineReportT]):
-        self._recorder = recorder
-
-    @property
-    def name(self) -> str:
-        return self._recorder.name
-
-    @property
-    def method_call_counts(self) -> dict[str, int]:
-        return self._recorder.method_call_counts
-
-    @property
-    def reports(self) -> list[SubroutineReportT]:
-        return self._recorder.reports
+    def __init__(
+        self,
+        name: str,
+        reports: list[SubroutineReportT],
+        method_call_counts: dict[str, int],
+    ):
+        self.name = name
+        self.reports = reports
+        self.method_call_counts = method_call_counts
 
     @property
     def has_valid_objective_value(self) -> bool:
@@ -151,6 +139,7 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
         data = self.to_dict(is_maximize=is_maximize)
         return_dict = {k: str(v) for k, v in data.items()}
         # Override dictionary
-        return_dict["methodCallCounts"] = f'"{self.method_call_counts}"'
+        # Remove the "defaultdict(...)" wrapper if present, and just use the dict string
+        return_dict["methodCallCounts"] = f'"{str(dict(self.method_call_counts))}"'
 
         return return_dict
