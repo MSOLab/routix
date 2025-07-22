@@ -29,7 +29,8 @@ class MultiScenarioRunner(
         output_dir: Path,
         base_output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
-    ):
+        **kwargs: Any,
+    ) -> None:
         # Set up the elapsed timer
         self.e_timer = ElapsedTimer()
 
@@ -50,6 +51,8 @@ class MultiScenarioRunner(
 
         # Execution configuration
         self.mode = mode
+
+        self.kwargs = kwargs
 
         self.runners: list[MultiInstanceRunnerT] = []
         self.results: list[Any] = []
@@ -109,6 +112,7 @@ class MultiScenarioRunner(
                 output_dir=scenario_output_dir,
                 output_metadata=self.base_output_metadata.copy(),
                 mode=self.mode,
+                **self.kwargs,
             )
 
             self.runners.append(multi_instance_runner)

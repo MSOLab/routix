@@ -26,7 +26,8 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         output_dir: Path,
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
-    ):
+        **kwargs: Any,
+    ) -> None:
         self.e_timer = ElapsedTimer()
         """Elapsed timer for multi-instance run."""
 

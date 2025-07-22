@@ -28,7 +28,9 @@ class MultiInstanceConcurrentRunner(
         output_dir: Path,
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
-    ):
+        instance_worker_cnt: int = 2,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(
             s_i_runner_class,
             instances,
@@ -39,43 +41,44 @@ class MultiInstanceConcurrentRunner(
             output_metadata,
             mode,
         )
-        self._max_workers: int = 2  # Default value for max_workers
+        self.set_instance_worker_cnt(instance_worker_cnt)
 
-    def get_max_workers(self) -> int:
+    def get_instance_worker_cnt(self) -> int:
         """
-        Retrieves the maximum number of workers for concurrent execution.
+        Retrieves the number of workers for concurrent execution.
 
         Raises:
-            ValueError: If max_workers is set to a value less than 1.
+            ValueError: If instance_worker_cnt is set to a value less than 1.
 
         Returns:
-            int: The maximum number of workers for concurrent execution.
+            int: The number of workers for concurrent execution.
                 If not set, returns the default value of 2.
         """
-        if self._max_workers < 1:
+        if self._instance_worker_cnt < 1:
             raise ValueError(
-                f"Max_workers must be at least 1, but is {self._max_workers}"
+                f"instance_worker_cnt must be at least 1, but is {self._instance_worker_cnt}"
             )
-        return self._max_workers
+        return self._instance_worker_cnt
 
-    def set_max_workers(self, max_workers: int) -> None:
+    def set_instance_worker_cnt(self, instance_worker_cnt: int) -> None:
+        """Sets the number of workers for concurrent execution.
+
+        Args:
+            instance_worker_cnt (int): The number of workers for concurrent execution.
         """
-        Sets the maximum number of workers for concurrent execution.
-        This method can be called to override the default value.
-        """
-        if max_workers < 1:
+        if instance_worker_cnt < 1:
             logging.warning(
-                f"Given max_workers {max_workers} is less than 1. "
-                "Setting max_workers to 1."
+                f"Given instance_worker_cnt {instance_worker_cnt} is less than 1. "
+                "Setting instance_worker_cnt to 1."
             )
-            self._max_workers = 1
+            self._instance_worker_cnt = 1
         else:
-            logging.info(f"Setting max_workers to {max_workers}")
-            self._max_workers = max_workers
+            logging.info(f"Setting instance_worker_cnt to {instance_worker_cnt}")
+            self._instance_worker_cnt = instance_worker_cnt
 
     def run(self):
-        worker_cnt = self.get_max_workers()
-        if worker_cnt == 1:
+        instance_worker_cnt = self.get_instance_worker_cnt()
+        if instance_worker_cnt == 1:
             return super().run()
 
         self.runners.clear()
@@ -94,7 +97,9 @@ class MultiInstanceConcurrentRunner(
             )
             self.runners.append(runner)
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=worker_cnt) as executor:
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=instance_worker_cnt
+        ) as executor:
             # Submit the run method of each pre-created runner instance
             futures = {executor.submit(runner.run): runner for runner in self.runners}
             for future in concurrent.futures.as_completed(futures):
