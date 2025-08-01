@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Generic
 
-from routix.utils import object_to_json, object_to_yaml
+from routix.io import object_to_json, object_to_yaml
 
 from .subroutine_report import SubroutineReportT
 

@@ -2,7 +2,7 @@ import json
 from pathlib import Path, PurePath
 from typing import Any, Self, Sequence, TypeVar
 
-from .utils import object_to_json, object_to_yaml
+from .io import object_to_json, object_to_yaml
 
 
 class DynamicDataObject:
