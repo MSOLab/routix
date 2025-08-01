@@ -54,8 +54,13 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
         ...
 
     def current_obj_value_is_worse_than(self, new_value: float) -> bool:
-        """
-        Checks if the new objective value is worse than the current best.
+        """Checks if the new objective value is worse than the current best.
+
+        Args:
+            new_value (float): The new objective value to compare.
+
+        Returns:
+            bool: True if the new value is worse than the current objective value, False otherwise.
         """
         return self._a_is_better_obj_value(new_value, self.best_obj_value)
 
@@ -65,7 +70,14 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
         ...
 
     def current_obj_bound_is_worse_than(self, new_bound: float) -> bool:
-        """Checks if the new objective bound is worse than the current best."""
+        """Checks if the new objective bound is worse than the current best.
+
+        Args:
+            new_bound (float): The new objective bound to compare.
+
+        Returns:
+            bool: True if the new bound is worse than the current objective bound, False otherwise.
+        """
         return self._a_is_better_obj_bound(new_bound, self.best_obj_bound)
 
     def register(self, report: SubroutineReportT, solution: SolutionT | None) -> bool:
