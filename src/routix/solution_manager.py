@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, List
+from typing import Generic
 
 from .report import SubroutineReportT
 from .type_defs import SolutionT
@@ -36,7 +36,7 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
     """
 
     def __init__(self) -> None:
-        self.history: List[SolutionRecord[SubroutineReportT, SolutionT]] = []
+        self.history: list[SolutionRecord[SubroutineReportT, SolutionT]] = []
         self.incumbent_solution: SolutionT | None = None
         self.best_obj_value: float | None = None
         self.best_obj_bound: float | None = None
