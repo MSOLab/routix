@@ -4,16 +4,15 @@ from typing import Any, Generic, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
 from ..subroutine_controller import SubroutineControllerT
-from ..type_defs import ParametersT
+from ..type_defs import ParametersT, RunMode
 
 
 class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
     """Abstract runner for a single problem instance."""
 
     ctrlr: SubroutineControllerT
-
     working_dir: Path
-    """Working directory for the instance run."""
+    mode: RunMode
 
     def __init__(
         self,
@@ -23,9 +22,10 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         stopping_criteria: Any,
         output_dir: Path,
         output_metadata: dict[str, Any],
+        mode: RunMode = RunMode.FULL_RUN,
     ):
         self.e_timer = ElapsedTimer()
-        """Elapsed timer for the single instance run."""
+        """Elapsed timer for single-instance run."""
         if dt := output_metadata.get("start_dt"):
             self.e_timer.set_start_time(dt)
 
@@ -44,47 +44,46 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         self.stopping_criteria = stopping_criteria
         """Data to define when to halt the run."""
 
-        # Output data
+        # Output configuration
 
         self.output_dir = output_dir
+        """Output directory for the instance run."""
         self.output_metadata = output_metadata
+        """Metadata for the output, such as start date-time and other information."""
+
+        # Execution configuration
+
+        self.mode = mode
 
         # Alias
-        self.ins_name = getattr(instance, "name", None)
 
+        self.ins_name = getattr(instance, "name", None)
+        """Alias for the instance name, if available."""
         self._init_working_dir()
 
     def _init_working_dir(self) -> None:
         """
         Initialize the working directory for the instance run.
-        This method creates a directory structure based on the output directory,
-        elapsed timer start time, and instance name if available.
 
-        - If the output directory name does not match the formatted start date-time,
-        it creates a subdirectory with the formatted start date-time.
-        - If an instance name is provided, it creates a further subdirectory for the instance.
+        The working directory is a subdirectory of the output_dir, named after the instance.
         """
         self.working_dir = self.output_dir
-        if self.output_dir.name != self.e_timer.get_start_dt_for_dir_name():
-            self.working_dir /= self.e_timer.get_start_dt_for_dir_name()
         if self.ins_name is not None:
             self.working_dir /= self.ins_name
         self.working_dir.mkdir(parents=True, exist_ok=True)
 
     def run(self):
-        """Run the instance using the initialized controller."""
+        """
+        Run the subroutine controller for the instance.
 
-        self.ctrlr = self.get_controller()
-        self.ctrlr.set_working_dir(self.working_dir)
-
-        single_instance_skip_run_do_post_process = self.output_metadata.get(
-            "single_instance_skip_run_do_post_process", False
-        )
-        if single_instance_skip_run_do_post_process:
-            # If skip run is set, skip the run and directly do post-process
-            return self.post_run_process()
-
-        self.ctrlr.run()
+        - This method initializes the controller and runs it if the mode is FULL_RUN.
+        - If the mode is POST_PROCESS_ONLY, it skips the controller run and directly
+        calls the post_run_process method.
+        """
+        if self.mode == RunMode.FULL_RUN:
+            self.ctrlr = self.get_controller()
+            self.ctrlr.set_working_dir(self.working_dir)
+            self.ctrlr.run()
 
         return self.post_run_process()
 
@@ -100,7 +99,7 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         ...
 
     @abstractmethod
-    def post_run_process(self):
+    def post_run_process(self) -> Any:
         """
         Define process after subroutine controller run.
         This method should be implemented by subclasses.
@@ -110,7 +109,7 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         - write the solution and statistics into files.
         - plot objective progress log or draw a gantt chart.
 
-        If self.output_metadata["single_instance_skip_run_do_post_process"] exists and is True,
+        If self.mode is RunMode.POST_PROCESS_ONLY,
         this method will be called without running the controller.
         """
         ...
