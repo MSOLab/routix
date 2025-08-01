@@ -1,6 +1,6 @@
 [project]
 name = "routix"
-version = "0.0.12"
+version = "0.0.13"
 description = "Define routines as structured algorithmic workflows"
 readme = "README.md"
 authors = [
