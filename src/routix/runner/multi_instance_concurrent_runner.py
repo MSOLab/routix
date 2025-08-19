@@ -77,7 +77,7 @@ class MultiInstanceConcurrentRunner(
             self._instance_worker_cnt = instance_worker_cnt
 
     def run(self):
-        instance_worker_cnt = self.get_instance_worker_cnt()
+        instance_worker_cnt = min(self.get_instance_worker_cnt(), len(self.instances))
         if instance_worker_cnt == 1:
             return super().run()
 
