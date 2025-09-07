@@ -2,7 +2,11 @@ import pytest
 
 from src.routix.constants import SubroutineFlowKeys
 from src.routix.dynamic_data_object import DynamicDataObject
-from src.routix.subroutine_flow_validator import SubroutineFlowValidator
+from src.routix.subroutine_flow_validator import (
+    SubroutineFlowValidator,
+    is_static_or_instance_method,
+    get_list_of_missing_required_arguments,
+)
 
 
 # 간단한 Mock 클래스 정의
@@ -66,7 +70,7 @@ def test_validate_invalid_flow_non_callable_method(
     validator: SubroutineFlowValidator, mock_controller_class: MockControllerClass
 ):
     # 호출할 수 없는 속성을 가진 DynamicDataObject 생성
-    mock_controller_class.non_callable_method = "not_callable"
+    setattr(mock_controller_class, "non_callable_method", "not_callable")
     invalid_flow = MockDynamicDataObject(
         {SubroutineFlowKeys.METHOD: "non_callable_method"}
     )
@@ -91,3 +95,47 @@ def test_explain_invalid_flow(validator: SubroutineFlowValidator):
 
     result = validator.explain(invalid_flow)
     assert "❌ Flow is invalid" in result
+
+
+def test_is_static_or_instance_method_variants():
+    class CallableObj:
+        def __call__(self):
+            pass
+
+    class C:
+        def inst(self):
+            pass
+
+        @staticmethod
+        def stat():
+            pass
+
+        @classmethod
+        def cm(cls):
+            pass
+
+        @property
+        def prop(self):
+            return 1
+
+        callable_attr = CallableObj()
+
+    assert is_static_or_instance_method(C, "inst") is True
+    assert is_static_or_instance_method(C, "stat") is True
+    # According to the docstring, classmethods should be treated as invalid
+    assert is_static_or_instance_method(C, "cm") is False
+    assert is_static_or_instance_method(C, "prop") is False
+    # callable attribute (object with __call__) should be considered valid
+    assert is_static_or_instance_method(C, "callable_attr") is True
+
+
+def test_get_list_of_missing_required_arguments():
+    class Ctrl:
+        def method(self, a, b=2, *, c):
+            return None
+
+    # kwargs provided only for 'a' -> 'c' is still missing
+    missing = get_list_of_missing_required_arguments(
+        Ctrl, "method", {"a": MockDynamicDataObject(1)}
+    )
+    assert missing == ["c"]

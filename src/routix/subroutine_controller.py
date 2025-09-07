@@ -78,7 +78,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
     def get_current_routine_name(self) -> str:
         warn(
             "get_current_routine_name() is deprecated."
-            " Use _get_context_of_current_method() instead."
+            " Use _get_call_context_of_current_method() instead."
         )
         return self._get_call_context_of_current_method()
 
@@ -112,7 +112,9 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         self._run_flow(self._subroutine_flow)
         self.post_run_process()
 
-    def _run_flow(self, routine_data: DynamicDataObject):
+    def _run_flow(
+        self, routine_data: DynamicDataObject, skip_method_call: bool = False
+    ):
         """
         Runs the subroutine flow defined by routine_data.
         Handles both sequences and single subroutine steps.
@@ -135,7 +137,8 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
             )
 
             self._method_context_mgr.push(method_name)
-            self._call_method(method_name, **kwargs_dict)
+            if not skip_method_call:
+                self._call_method(method_name, **kwargs_dict)
             self._method_context_mgr.pop()
 
     def _call_method(self, method_name: str, **kwargs: dict[str, Any]):

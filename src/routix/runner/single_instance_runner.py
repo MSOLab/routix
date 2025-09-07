@@ -14,6 +14,10 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
     working_dir: Path
     mode: RunMode
 
+    # Optional member variables for RunMode.RESUME
+    flow_resume_idx: int = 0
+    """Index in the subroutine flow to resume from, if applicable."""
+
     def __init__(
         self,
         instance: ParametersT,
