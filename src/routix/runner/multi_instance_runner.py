@@ -54,6 +54,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
 
         self._set_start_dt()
         self._init_working_dir()
+        self._init_single_instance_runners()
 
     def _set_start_dt(self) -> None:
         """
@@ -75,7 +76,8 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         self.working_dir = self.output_dir
         self.working_dir.mkdir(parents=True, exist_ok=True)
 
-    def run(self):
+    def _init_single_instance_runners(self) -> None:
+        """Initializes the single instance runners for each instance."""
         self.runners.clear()
         self.results.clear()
 
@@ -92,6 +94,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             )
             self.runners.append(runner)
 
+    def run(self) -> Any:
         for idx, runner in enumerate(self.runners):
             try:
                 result = runner.run()
