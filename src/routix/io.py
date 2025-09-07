@@ -1,5 +1,5 @@
 import json
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 import yaml
@@ -63,3 +63,17 @@ def object_to_json(obj: Any, path: Path, encoding: str = "utf-8") -> None:
     """Saves a Python object to a JSON file."""
     with open(path, "w", encoding=encoding) as f:
         json.dump(obj, f, indent=2)
+
+
+def yaml_to_object(path: PurePath, encoding: str = "utf-8") -> Any:
+    """Loads a Python object from a YAML file.
+
+    Args:
+        path (PurePath): The file path from which to load the YAML.
+        encoding (str, optional): The encoding to use for the file. Defaults to "utf-8".
+
+    Returns:
+        Any: The Python object loaded from the YAML file.
+    """
+    with open(path, "r", encoding=encoding) as f:
+        return yaml.safe_load(f)
