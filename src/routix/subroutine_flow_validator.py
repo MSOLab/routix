@@ -18,10 +18,10 @@ class SubroutineFlowValidator:
     def get_invalid_blocks(self, flow: DynamicDataObject) -> list[dict]:
         errors: list[dict] = []
 
-        def recurse(block: DynamicDataObject):
+        def recursively_get(block: DynamicDataObject):
             if isinstance(block, Sequence) and not isinstance(block, (str, bytes)):
                 for b in block:
-                    recurse(b)
+                    recursively_get(b)
                 return
 
             # The block is not a sequence, so we check if it's a dict
@@ -95,7 +95,7 @@ class SubroutineFlowValidator:
                 )
                 return
 
-        recurse(flow)
+        recursively_get(flow)
         return errors
 
     def explain(self, flow: DynamicDataObject) -> str:
@@ -135,13 +135,15 @@ def is_static_or_instance_method(cls: type, method_name: str) -> bool:
     # Static method
     if isinstance(attr, staticmethod):
         return True
-    # Regular instance method
+    # Exclude classmethod and property
+    if isinstance(attr, classmethod) or isinstance(attr, property):
+        return False
+    # Regular instance function defined on the class
     if inspect.isfunction(attr):
         return True
-    # Also check if the actual instance is callable (e.g., objects implementing __call__)
-    if callable(getattr(cls, method_name, None)):
-        return True
-    return False
+    # Fall back: if the attribute on the class is callable, accept it
+    val = getattr(cls, method_name, None)
+    return callable(val)
 
 
 def get_list_of_missing_required_arguments(
