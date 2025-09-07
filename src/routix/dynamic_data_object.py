@@ -2,7 +2,7 @@ import json
 from pathlib import Path, PurePath
 from typing import Any, Self, Sequence, TypeVar
 
-from .io import object_to_json, object_to_yaml
+from .io import object_to_json, object_to_yaml, yaml_to_object
 
 
 class DynamicDataObject:
@@ -130,6 +130,28 @@ class DynamicDataObject:
             encoding (str): Encoding to use for the file. Defaults to "utf-8".
         """
         object_to_json(self.to_obj(), file_path, encoding=encoding)
+
+    @classmethod
+    def from_yaml(cls, file_path: PurePath, encoding="utf-8") -> Any:
+        """Deserializes a YAML file into a DynamicDataObject instance.
+
+        Args:
+            file_path (PurePath)
+
+        Raises:
+            RuntimeError: If an error occurs while reading the file.
+            ValueError: If an error occurs while parsing the YAML data.
+
+        Returns:
+            Any: a class instance created from the YAML data in the file.
+        """
+        try:
+            yaml_data = yaml_to_object(file_path, encoding=encoding)
+            return cls.from_obj(yaml_data)
+        except (IOError, OSError) as e:
+            raise RuntimeError(f"Error reading from file {file_path}: {e}")
+        except Exception as e:
+            raise ValueError(f"Error parsing YAML from file {file_path}: {e}")
 
     def to_yaml(self, file_path: Path, encoding="utf-8") -> None:
         """Serializes the object's data to a YAML file at the specified file path.
