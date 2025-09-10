@@ -12,7 +12,7 @@ from .elapsed_timer import ElapsedTimer
 from .method_context_manager import MethodContextManager
 from .report import SubroutineReportT
 from .stopping_criteria import StoppingCriteriaT
-
+from contextlib import contextmanager
 
 class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
     """
@@ -229,6 +229,14 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
         return self._random_seed
 
+    @contextmanager
+    def temporarily_extended_context(self, appended_name: str):
+        self._method_context_mgr.push(appended_name)
+        try:
+            yield
+        finally:
+            self._method_context_mgr.pop()
+
     def repeat(self, n_repeats: int, routine_data: DynamicDataObject):
         """
         Repeats the execution of a routine a specified number of times.
@@ -248,9 +256,8 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
                 break
             logging.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
 
-            self._method_context_mgr.push(subroutine_name)
-            self._run_flow(DynamicDataObject.from_obj(routine_data))
-            self._method_context_mgr.pop()
+            with self.temporarily_extended_context(subroutine_name):
+                self._run_flow(DynamicDataObject.from_obj(routine_data))
 
 
 SubroutineControllerT = TypeVar("SubroutineControllerT", bound=SubroutineController)
