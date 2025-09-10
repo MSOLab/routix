@@ -55,8 +55,24 @@ def append_data_to_yaml(
             lock, unlock = platform_lock(f)
             lock()
             try:
-                f.write("---\n")
                 yaml.safe_dump(row, f)
+                f.flush()
+                os.fsync(f.fileno())
+            finally:
+                unlock()
+
+
+def batch_write_data_to_yaml(
+    yaml_path: Path, rows: list[dict[str, Any]], encoding: str = "utf-8"
+) -> None:
+    yaml_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with _file_lock:
+        with open(yaml_path, "w", encoding=encoding) as f:
+            lock, unlock = platform_lock(f)
+            lock()
+            try:
+                yaml.safe_dump_all(rows, f)
                 f.flush()
                 os.fsync(f.fileno())
             finally:
@@ -80,6 +96,32 @@ def append_data_to_csv(
                 if not file_exists and header is not None:
                     f.write(",".join(header) + "\n")
                 f.write(",".join(str(row.get(col, "")) for col in header) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+            finally:
+                unlock()
+
+
+def batch_write_data_to_csv(
+    csv_path: Path,
+    rows: list[dict[str, Any]],
+    header: list[str],
+    encoding: str = "utf-8",
+) -> None:
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with _file_lock:
+        file_exists = csv_path.is_file()
+        with open(csv_path, "w", encoding=encoding, newline="") as f:
+            lock, unlock = platform_lock(f)
+            lock()
+            try:
+                lines: list[str] = []
+                if not file_exists and header is not None:
+                    lines.append(",".join(header))
+                for row in rows:
+                    lines.append(",".join(str(row.get(col, "")) for col in header))
+                f.write("\n".join(lines) + "\n")
                 f.flush()
                 os.fsync(f.fileno())
             finally:
