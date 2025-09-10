@@ -139,3 +139,11 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
             if record.solution is not None:
                 return record.solution
         return None
+
+    def get_last_report(self) -> SubroutineReportT | None:
+        """
+        Retrieves the most recent report from the history.
+        """
+        if not self.history:
+            return None
+        return self.history[-1].report
