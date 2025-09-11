@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
@@ -12,7 +13,7 @@ from .elapsed_timer import ElapsedTimer
 from .method_context_manager import MethodContextManager
 from .report import SubroutineReportT
 from .stopping_criteria import StoppingCriteriaT
-from contextlib import contextmanager
+
 
 class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
     """
@@ -186,7 +187,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         logging.info(str(log_entry))
 
     @abstractmethod
-    def is_stopping_condition(self) -> bool:
+    def is_stopping_condition(self, **kwargs) -> bool:
         """
         Checks if the stopping condition for the subroutine controller is met.
         This method should be implemented in subclasses.
