@@ -128,13 +128,13 @@ def test_fill_method_defaults_handles_keyword_only_defaults():
 
 def test_validate_subroutine_flow_prefix_success(validator: SubroutineFlowValidator):
     # resume is a prefix of current
-    resume = MockDynamicDataObject(
+    resume = MockDynamicDataObject.from_obj(
         [
             {"method": "some_method"},
             {"method": "another_method"},
         ]
     )
-    current = MockDynamicDataObject(
+    current = MockDynamicDataObject.from_obj(
         [
             {"method": "some_method"},
             {"method": "another_method"},
@@ -148,13 +148,13 @@ def test_validate_subroutine_flow_prefix_success(validator: SubroutineFlowValida
 def test_validate_subroutine_flow_prefix_mismatch_raises(
     validator: SubroutineFlowValidator,
 ):
-    resume = MockDynamicDataObject(
+    resume = MockDynamicDataObject.from_obj(
         [
             {"method": "some_method"},
             {"method": "some_method"},
         ]
     )
-    current = MockDynamicDataObject(
+    current = MockDynamicDataObject.from_obj(
         [
             {"method": "some_method"},
             {"method": "another_method"},
@@ -168,14 +168,14 @@ def test_validate_subroutine_flow_prefix_mismatch_raises(
 def test_validate_subroutine_flow_prefix_resume_longer_raises(
     validator: SubroutineFlowValidator,
 ):
-    resume = MockDynamicDataObject(
+    resume = MockDynamicDataObject.from_obj(
         [
             {"method": "some_method"},
             {"method": "another_method"},
             {"method": "some_method"},
         ]
     )
-    current = MockDynamicDataObject(
+    current = MockDynamicDataObject.from_obj(
         [
             {"method": "some_method"},
         ]
