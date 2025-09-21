@@ -23,7 +23,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
     def __init__(
         self,
         name: str,
-        subroutine_flow: DynamicDataObject,
+        subroutine_flow: Sequence[DynamicDataObject] | DynamicDataObject,
         stopping_criteria: StoppingCriteriaT,
         start_dt: datetime | None = None,
     ):
@@ -114,7 +114,9 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         self.post_run_process()
 
     def _run_flow(
-        self, routine_data: DynamicDataObject, skip_method_call: bool = False
+        self,
+        routine_data: Sequence[DynamicDataObject] | DynamicDataObject,
+        skip_method_call: bool = False,
     ):
         """
         Runs the subroutine flow defined by routine_data.
@@ -122,14 +124,14 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         Checks stopping condition before each execution.
 
         Args:
-            routine_data (DynamicDataObject): Subroutine flow data.
+            routine_data (Sequence[DynamicDataObject] | DynamicDataObject): Subroutine flow data.
         """
         if isinstance(routine_data, Sequence) and not isinstance(
             routine_data, (str, bytes)
         ):
             for subroutine_data in routine_data:
                 self._run_flow(subroutine_data)
-        else:  # is an dict-like object
+        elif not isinstance(routine_data, Sequence):  # is an dict-like object
             if self.is_stopping_condition():
                 return
 

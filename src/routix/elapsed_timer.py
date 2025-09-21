@@ -7,8 +7,6 @@ from warnings import warn
 class ElapsedTimer:
     """Utility class to track elapsed time and provide formatted timestamps."""
 
-    __slots__ = ("_start_dt", "_start_monotonic")
-
     _start_dt: datetime
     """Datetime object of start time"""
     _start_monotonic: float

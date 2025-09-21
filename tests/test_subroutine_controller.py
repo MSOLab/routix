@@ -18,7 +18,7 @@ class MockSubroutineController(
         self._stop_condition_met = False
         self.mock_method = lambda **kwargs: None  # Default callable
 
-    def is_stopping_condition(self) -> bool:
+    def is_stopping_condition(self, **kwargs) -> bool:
         return self._stop_condition_met
 
     def post_run_process(self):
