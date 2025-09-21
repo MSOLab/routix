@@ -69,9 +69,7 @@ class MultiScenarioRunner(
         if dt := self.base_output_metadata.get("start_dt"):
             self.e_timer.set_start_time(dt)
         else:
-            self.base_output_metadata["start_dt"] = (
-                self.e_timer.get_formatted_start_dt()
-            )
+            self.base_output_metadata["start_dt"] = self.e_timer.start_dt
 
     def _init_multi_instance_runners(self) -> None:
         """Initializes MultiInstanceRunners for each scenario configuration."""

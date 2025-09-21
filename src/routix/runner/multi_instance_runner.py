@@ -75,7 +75,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         if dt := self.output_metadata.get("start_dt"):
             self.e_timer.set_start_time(dt)
         else:
-            self.output_metadata["start_dt"] = self.e_timer.get_formatted_start_dt()
+            self.output_metadata["start_dt"] = self.e_timer.start_dt
 
     def _init_working_dir(self) -> None:
         """
