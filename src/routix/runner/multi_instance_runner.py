@@ -204,7 +204,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             try:
                 result = runner.run()
             except Exception as e:
-                logging.error(f"Error in instance {idx}: {e}")
+                logging.error(f"Error in instance {runner.ins_name}: {e}")
                 traceback.print_exc()
                 result = None
             self.results.append(result)
