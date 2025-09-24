@@ -47,6 +47,18 @@ class DynamicDataObject:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({str(self.to_obj())})"
 
+    def get(self, key: Any, default: Any = None) -> Any:
+        """Get an attribute value with a default if the attribute does not exist.
+
+        Args:
+            key (Any): Attribute name
+            default (Any): Default value if attribute is not found
+
+        Returns:
+            Any: Attribute value or default
+        """
+        return getattr(self, key, default)
+
     @classmethod
     def from_sequence(cls, sequence: Sequence[Any]) -> list[Self]:
         return [cls.from_obj(item) for item in sequence]
