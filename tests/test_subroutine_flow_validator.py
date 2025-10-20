@@ -9,7 +9,7 @@ from src.routix.subroutine_flow_validator import (
 )
 
 
-# 간단한 Mock 클래스 정의
+# Simple Mock class definition
 class MockDynamicDataObject(DynamicDataObject):
     def __init__(self, data):
         self.data = data
@@ -69,7 +69,7 @@ def test_validate_invalid_flow_nonexistent_method(validator: SubroutineFlowValid
 def test_validate_invalid_flow_non_callable_method(
     validator: SubroutineFlowValidator, mock_controller_class: MockControllerClass
 ):
-    # 호출할 수 없는 속성을 가진 DynamicDataObject 생성
+    # create a DynamicDataObject with a non-callable attribute
     setattr(mock_controller_class, "non_callable_method", "not_callable")
     invalid_flow = MockDynamicDataObject(
         {SubroutineFlowKeys.METHOD: "non_callable_method"}
@@ -82,7 +82,7 @@ def test_validate_invalid_flow_non_callable_method(
 
 
 def test_explain_valid_flow(validator: SubroutineFlowValidator):
-    # 유효한 DynamicDataObject 생성
+    # create a valid DynamicDataObject
     valid_flow = MockDynamicDataObject({SubroutineFlowKeys.METHOD: "some_method"})
 
     result = validator.explain(valid_flow)
@@ -90,7 +90,7 @@ def test_explain_valid_flow(validator: SubroutineFlowValidator):
 
 
 def test_explain_invalid_flow(validator: SubroutineFlowValidator):
-    # 잘못된 DynamicDataObject 생성
+    # create an invalid DynamicDataObject
     invalid_flow = MockDynamicDataObject({})
 
     result = validator.explain(invalid_flow)

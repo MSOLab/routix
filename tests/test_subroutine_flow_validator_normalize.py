@@ -6,7 +6,7 @@ from src.routix.subroutine_flow_validator import (
 )
 
 
-# 간단한 Mock 클래스 정의
+# Simple Mock class definition
 class MockDynamicDataObject(DynamicDataObject):
     def __init__(self, data):
         self.data = data

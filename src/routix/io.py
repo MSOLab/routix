@@ -82,9 +82,9 @@ def yaml_to_object(path: PurePath, encoding: str = "utf-8") -> Any:
 
 def tuple_to_pyyaml_key(d: dict) -> dict:
     """
-    tuple 형태의 key를 '!!python/tuple [j0,i0,i0_1]' 형태로 변환
+    Converts tuple-format dictionary keys to the format '!!python/tuple [j0,i0,i0_1]'.
 
-    reference: solution_manager.py row 66
+    Reference: solution_manager.py row 66
     """
     new_dict = {}
     for k, v in d.items():
@@ -99,9 +99,9 @@ def tuple_to_pyyaml_key(d: dict) -> dict:
 
 def pyyaml_key_to_tuple(d: dict) -> dict:
     """
-    '!!python/tuple [j0,i0,i0_1]' 형태의 key를 tuple로 변환
+    Converts keys in the format '!!python/tuple [j0,i0,i0_1]' to tuples.
 
-    reference: solution_manager.py row 66
+    Reference: solution_manager.py row 66
     """
     tuple_key_pattern = re.compile(r"^!!python/tuple \[(.*)\]$")
     new_dict = {}
