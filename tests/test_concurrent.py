@@ -47,14 +47,18 @@ def test_platform_lock_posix(monkeypatch):
     )
     monkeypatch.setitem(sys.modules, "fcntl", fake_fcntl)
 
-    f = cast(TextIOWrapper, _FakeFile())
-    lock, unlock = platform_lock(f)
+    fake = _FakeFile()
+    f_for_sig = cast(TextIOWrapper, fake)
+    lock, unlock = platform_lock(f_for_sig)
 
     lock()
     unlock()
 
     # Expect exclusive lock then unlock on the same object
-    assert calls == [("flock", f, fake_fcntl.LOCK_EX), ("flock", f, fake_fcntl.LOCK_UN)]
+    assert calls == [
+        ("flock", fake, fake_fcntl.LOCK_EX),
+        ("flock", fake, fake_fcntl.LOCK_UN),
+    ]
 
 
 def test_platform_lock_windows(monkeypatch):
@@ -70,18 +74,19 @@ def test_platform_lock_windows(monkeypatch):
     fake_msvcrt = types.SimpleNamespace(LK_LOCK=1, LK_UNLCK=2, locking=fake_locking)
     monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
 
-    f = cast(TextIOWrapper, _FakeFile())
-    lock, unlock = platform_lock(f)
+    fake = _FakeFile()
+    f_for_sig = cast(TextIOWrapper, fake)
+    lock, unlock = platform_lock(f_for_sig)
 
     lock()
     unlock()
 
     # Seek(0, SEEK_SET) was used before each locking call
-    assert f.seek_calls == [(0, os.SEEK_SET), (0, os.SEEK_SET)]
+    assert fake.seek_calls == [(0, os.SEEK_SET), (0, os.SEEK_SET)]
     # 1 byte locking used with fileno()
     assert calls == [
-        ("locking", f.fileno(), fake_msvcrt.LK_LOCK, 1),
-        ("locking", f.fileno(), fake_msvcrt.LK_UNLCK, 1),
+        ("locking", fake.fileno(), fake_msvcrt.LK_LOCK, 1),
+        ("locking", fake.fileno(), fake_msvcrt.LK_UNLCK, 1),
     ]
 
 
