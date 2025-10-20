@@ -225,7 +225,7 @@ def test_platform_lock_exclusive(tmp_path):
         code = """
 import time, sys, msvcrt, os
 f = open(sys.argv[1], 'a')
-# msvcrt.locking은 0바이트 잠금이 안 되므로 항상 1바이트 잠금
+# msvcrt.locking does not support 0-byte locks, so always use 1-byte lock
 f.seek(0, os.SEEK_SET)
 msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
 print("locked", flush=True)

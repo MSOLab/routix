@@ -9,8 +9,10 @@ class ElapsedTimer:
 
     _start_dt: datetime
     """Datetime object of start time"""
+
     _start_monotonic: float
     """Monotonic timer value at start"""
+
     _dir_name_format: str = "%Y%m%dT%H%M%S_%f"
     """Format for directory names based on start time"""
 

@@ -106,7 +106,6 @@ class MultiScenarioRunner(
                 **self.kwargs,
             )
             if self.mode == RunMode.RESUME:
-                # TODO: define "flow_resume_idx" constant
                 multi_instance_runner.set_flow_resume_idx(
                     scenario_config.get("flow_resume_idx", 0)
                 )
