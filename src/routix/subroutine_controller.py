@@ -125,13 +125,14 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
 
         Args:
             routine_data (Sequence[DynamicDataObject] | DynamicDataObject): Subroutine flow data.
+            skip_method_call (bool, optional): Whether to skip the method call. Defaults to False.
         """
         if isinstance(routine_data, Sequence) and not isinstance(
             routine_data, (str, bytes)
         ):
             for subroutine_data in routine_data:
                 self._run_flow(subroutine_data)
-        elif not isinstance(routine_data, Sequence):  # is an dict-like object
+        elif not isinstance(routine_data, Sequence):  # is a dict-like object
             if self.is_stopping_condition():
                 return
 
