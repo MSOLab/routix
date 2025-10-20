@@ -1,9 +1,11 @@
 import os
+import subprocess
 import sys
 import threading
+import time
 import types
 from io import TextIOWrapper
-from typing import cast
+from typing import TextIO, cast
 
 import yaml
 
@@ -213,3 +215,73 @@ def test_append_data_to_csv_thread_safety(tmp_path, monkeypatch):
     # Each data line should be a complete row (no partial interleaving)
     for ln in lines[1:]:
         assert ln.count(",") == 1
+
+
+def test_platform_lock_exclusive(tmp_path):
+    path = tmp_path / "lock_test.txt"
+    path.write_text("")
+
+    if os.name == "nt":
+        code = """
+import time, sys, msvcrt, os
+f = open(sys.argv[1], 'a')
+# msvcrt.locking은 0바이트 잠금이 안 되므로 항상 1바이트 잠금
+f.seek(0, os.SEEK_SET)
+msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+print("locked", flush=True)
+time.sleep(2)
+f.seek(0, os.SEEK_SET)
+try:
+    msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+except OSError:
+    pass
+"""
+    else:
+        code = """
+import time, sys, fcntl
+f = open(sys.argv[1], 'a')
+fcntl.flock(f, fcntl.LOCK_EX)
+print("locked", flush=True)
+time.sleep(2)
+fcntl.flock(f, fcntl.LOCK_UN)
+"""
+
+    # First process holds the lock for 2 seconds
+    p1 = subprocess.Popen(
+        [sys.executable, "-c", code, str(path)], stdout=subprocess.PIPE, text=True
+    )
+    assert p1.stdout is not None
+    stdout = cast("TextIO", p1.stdout)
+    stdout.readline()  # wait until "locked"
+
+    # Second process immediately tries to acquire lock -> blocked until released
+    start = time.time()
+    subprocess.run([sys.executable, "-c", code, str(path)], check=True)
+    elapsed = time.time() - start
+
+    # Second process must wait at least 2 seconds for lock to be released
+    assert elapsed >= 2.0
+
+
+def test_thread_lock_blocks(tmp_path):
+    path = tmp_path / "test.yaml"
+    path.write_text("")  # empty file
+
+    with open(path, "a", encoding="utf-8") as f:
+        lock, unlock = platform_lock(f)
+
+        def worker():
+            with open(path, "a", encoding="utf-8") as g:
+                l2, u2 = platform_lock(g)
+                t0 = time.time()
+                l2()  # should block until main thread unlocks
+                u2()
+                elapsed = time.time() - t0
+                assert elapsed >= 0.5  # at least half a second blocked
+
+        t = threading.Thread(target=worker)
+        t.start()
+        lock()
+        time.sleep(0.5)
+        unlock()
+        t.join()
