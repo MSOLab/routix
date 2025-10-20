@@ -64,7 +64,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             try:
                 self._load_resume_data()
             except Exception as e:
-                logging.exception(f"Loading resume data failed: {e}", exc_info=True)
+                logging.exception(f"Loading resume data failed: {e}")
 
     def _set_start_dt(self) -> None:
         """
