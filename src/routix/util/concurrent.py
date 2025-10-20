@@ -11,7 +11,7 @@ def platform_lock(f: TextIOWrapper) -> tuple[Callable[[], None], Callable[[], No
     """Creates platform-specific file lock and unlock functions.
 
     Args:
-        f (BinaryIO): an open binary file object (e.g. opened with open(path, "r+b"))
+        f (TextIOWrapper): an open text file object (e.g. opened with open(path, "a", encoding="utf-8"))
 
     Returns:
         A (lock, unlock) tuple of functions.
@@ -20,12 +20,12 @@ def platform_lock(f: TextIOWrapper) -> tuple[Callable[[], None], Callable[[], No
         import msvcrt
 
         def lock():
-            # lock whole file (seek 0 then lock 0 bytes is not supported; use 1-byte lock as simplest)
-            f.seek(0, os.SEEK_END)
+            # Lock 1 byte at the start of the file (locking 0 bytes is not supported)
+            f.seek(0, os.SEEK_SET)
             msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
 
         def unlock():
-            f.seek(0, os.SEEK_END)
+            f.seek(0, os.SEEK_SET)
             try:
                 msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
             except OSError:
@@ -111,13 +111,12 @@ def batch_write_data_to_csv(
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     with _file_lock:
-        file_exists = csv_path.is_file()
         with open(csv_path, "w", encoding=encoding, newline="") as f:
             lock, unlock = platform_lock(f)
             lock()
             try:
                 lines: list[str] = []
-                if not file_exists and header is not None:
+                if header is not None:
                     lines.append(",".join(header))
                 for row in rows:
                     lines.append(",".join(str(row.get(col, "")) for col in header))
