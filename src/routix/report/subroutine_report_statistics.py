@@ -41,23 +41,31 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
 
     @property
     def min_obj_report(self) -> SubroutineReportT | None:
+        """
+        Returns:
+            SubroutineReportT | None: The report with the minimum objective value.
+                - If no valid reports exist, returns None.
+                - Tie-breaker: prefers later reports in case of equal objective values.
+        """
         fea = self.valid_reports
         if not fea:
             return None
-        return min(
-            fea,
-            key=lambda r: r.obj_value if r.obj_value is not None else float("inf"),
-        )
+        idx, _ = min(enumerate(fea), key=lambda t: (t[1].obj_value, -t[0]))
+        return fea[idx]
 
     @property
     def max_obj_report(self) -> SubroutineReportT | None:
+        """
+        Returns:
+            SubroutineReportT | None: The report with the maximum objective value.
+                - If no valid reports exist, returns None.
+                - Tie-breaker: prefers later reports in case of equal objective values.
+        """
         fea = self.valid_reports
         if not fea:
             return None
-        return max(
-            fea,
-            key=lambda r: r.obj_value if r.obj_value is not None else float("-inf"),
-        )
+        idx, _ = max(enumerate(fea), key=lambda t: (t[1].obj_value, t[0]))
+        return fea[idx]
 
     def get_best_report(self, is_maximize: bool = False) -> SubroutineReportT | None:
         """Get the best report based on the objective value.
