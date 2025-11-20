@@ -58,6 +58,7 @@ class MultiScenarioRunner(
         self.results: list[Any] = []
 
         self._set_start_dt()
+        self._init_multi_instance_runners()
 
     def _set_start_dt(self) -> None:
         """
@@ -68,23 +69,13 @@ class MultiScenarioRunner(
         if dt := self.base_output_metadata.get("start_dt"):
             self.e_timer.set_start_time(dt)
         else:
-            self.base_output_metadata["start_dt"] = (
-                self.e_timer.get_formatted_start_dt()
-            )
+            self.base_output_metadata["start_dt"] = self.e_timer.start_dt
 
-    def run(self):
-        """
-        Executes each scenario sequentially.
-        """
+    def _init_multi_instance_runners(self) -> None:
+        """Initializes MultiInstanceRunners for each scenario configuration."""
+
         self.runners.clear()
-        self.results.clear()
-
         for i, scenario_config in enumerate(self.scenario_configs):
-            logging.info(
-                f"--- Starting Scenario {i + 1}/{len(self.scenario_configs)} ---"
-            )
-            logging.info(f"Scenario Config: {scenario_config}")
-
             subroutine_flow = scenario_config.get("subroutine_flow")
             stopping_criteria = scenario_config.get("stopping_criteria")
 
@@ -114,8 +105,23 @@ class MultiScenarioRunner(
                 mode=self.mode,
                 **self.kwargs,
             )
+            if self.mode == RunMode.RESUME:
+                multi_instance_runner.set_flow_resume_idx(
+                    scenario_config.get("flow_resume_idx", 0)
+                )
 
             self.runners.append(multi_instance_runner)
+
+    def run(self):
+        """Executes each scenario sequentially."""
+
+        runner_cnt = len(self.runners)
+        self.results.clear()
+
+        for i, multi_instance_runner in enumerate(self.runners):
+            logging.info(f"--- Starting Scenario {i + 1}/{runner_cnt} ---")
+            logging.info(f"Scenario Config: {self.scenario_configs[i]}")
+
             try:
                 result = multi_instance_runner.run()
                 self.results.append(result)
@@ -123,9 +129,7 @@ class MultiScenarioRunner(
                 logging.error(f"Error in scenario {i + 1}: {e}", exc_info=True)
                 self.results.append(None)
 
-            logging.info(
-                f"--- Finished Scenario {i + 1}/{len(self.scenario_configs)} ---"
-            )
+            logging.info(f"--- Finished Scenario {i + 1}/{runner_cnt} ---")
 
         return self.post_run_process()
 

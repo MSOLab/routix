@@ -76,26 +76,10 @@ class MultiInstanceConcurrentRunner(
             logging.info(f"Setting instance_worker_cnt to {instance_worker_cnt}")
             self._instance_worker_cnt = instance_worker_cnt
 
-    def run(self):
-        instance_worker_cnt = self.get_instance_worker_cnt()
+    def run(self) -> Any:
+        instance_worker_cnt = min(self.get_instance_worker_cnt(), len(self.instances))
         if instance_worker_cnt == 1:
             return super().run()
-
-        self.runners.clear()
-        self.results.clear()
-
-        # Pre-create all runner instances to populate self.runners
-        for instance in self.instances:
-            runner = self.s_i_runner_class(
-                instance=instance,
-                shared_param_dict=self.shared_param_dict,
-                subroutine_flow=self.subroutine_flow,
-                stopping_criteria=self.stopping_criteria,
-                output_dir=self.output_dir,
-                output_metadata=self.output_metadata,
-                mode=self.mode,
-            )
-            self.runners.append(runner)
 
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=instance_worker_cnt

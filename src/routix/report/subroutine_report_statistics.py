@@ -100,6 +100,18 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
 
         Returns:
             dict[str, Any]: A dictionary representation of the statistics.
+
+        The dictionary includes:
+            - `instanceName`: Name of the subroutine instance.
+            - `foundFeasibleSol`: Boolean indicating if a feasible solution was found.
+            - `totalElapsedTime`: Total elapsed time across all reports.
+            - `firstObj`: Objective value of the first report, or None if not available.
+            - `firstBound`: Objective bound of the first report, or None if not available.
+            - `bestObj`: Objective value of the best report, or None if not available.
+            - `bestBound`: Objective bound of the best report, or None if not available.
+            - `improvementRatio`: Improvement ratio from the first to the best report.
+            - `methodCallCounts`: Serialized string of method call counts.
+            - `reportCount`: Total number of reports collected.
         """
         first = self.first_report
         best = self.get_best_report(is_maximize=is_maximize)
@@ -108,6 +120,7 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
             "foundFeasibleSol": self.has_valid_objective_value,
             "totalElapsedTime": self.total_elapsed_time,
             "firstObj": getattr(first, "obj_value", None) if first else None,
+            "firstBound": getattr(first, "obj_bound", None) if first else None,
             "bestObj": getattr(best, "obj_value", None) if best else None,
             "bestBound": getattr(best, "obj_bound", None) if best else None,
             "improvementRatio": self.get_improvement_ratio(is_maximize),

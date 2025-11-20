@@ -7,12 +7,12 @@ from warnings import warn
 class ElapsedTimer:
     """Utility class to track elapsed time and provide formatted timestamps."""
 
-    __slots__ = ("_start_dt", "_start_monotonic")
-
     _start_dt: datetime
     """Datetime object of start time"""
+
     _start_monotonic: float
     """Monotonic timer value at start"""
+
     _dir_name_format: str = "%Y%m%dT%H%M%S_%f"
     """Format for directory names based on start time"""
 
@@ -30,7 +30,9 @@ class ElapsedTimer:
             start_dt (datetime): Datetime object of start time
         """
         self._start_dt = start_dt
-        self._start_monotonic = time.monotonic()
+        self._start_monotonic = time.monotonic() - (
+            datetime.now().timestamp() - start_dt.timestamp()
+        )
 
     def set_start_time_as_now(self):
         """Sets the start time of the timer to the current time."""

@@ -1,5 +1,6 @@
 import json
-from pathlib import Path
+import re
+from pathlib import Path, PurePath
 from typing import Any
 
 import yaml
@@ -63,3 +64,73 @@ def object_to_json(obj: Any, path: Path, encoding: str = "utf-8") -> None:
     """Saves a Python object to a JSON file."""
     with open(path, "w", encoding=encoding) as f:
         json.dump(obj, f, indent=2)
+
+
+def yaml_to_object(path: PurePath, encoding: str = "utf-8") -> Any:
+    """Loads a Python object from a YAML file.
+
+    Args:
+        path (PurePath): The file path from which to load the YAML.
+        encoding (str, optional): The encoding to use for the file. Defaults to "utf-8".
+
+    Returns:
+        Any: The Python object loaded from the YAML file.
+    """
+    with open(path, "r", encoding=encoding) as f:
+        return yaml.safe_load(f)
+
+
+def tuple_to_pyyaml_key(d: dict) -> dict:
+    """
+    Converts tuple-format dictionary keys to the format '!!python/tuple [j0,i0,i0_1]'.
+
+    Reference: solution_manager.py row 66
+    """
+    new_dict = {}
+    for k, v in d.items():
+        if isinstance(k, tuple):
+            # Join internal elements with commas and strip
+            items = ", ".join(str(item).strip() for item in k)
+            new_dict[f"!!python/tuple [{items}]"] = v
+        else:
+            new_dict[k] = v
+    return new_dict
+
+
+def pyyaml_key_to_tuple(d: dict) -> dict:
+    """
+    Converts keys in the format '!!python/tuple [j0,i0,i0_1]' to tuples.
+
+    Reference: solution_manager.py row 66
+    """
+    tuple_key_pattern = re.compile(r"^!!python/tuple \[(.*)\]$")
+    new_dict = {}
+    for k, v in d.items():
+        m = tuple_key_pattern.match(k)
+        if m:
+            # Split internal elements by comma and strip
+            items = [item.strip() for item in m.group(1).split(",")]
+            new_dict[tuple(items)] = v
+        else:
+            new_dict[k] = v
+    return new_dict
+
+
+def extract_prefix_from_filename(pattern: str, filename: str) -> str | None:
+    """Extracts the prefix from a filename based on a given pattern.
+
+    For example, pattern `{}_obj_log.yaml` will match filename `0_obj_log.yaml` and extract "0".
+
+    Args:
+        pattern (str): Pattern to match the filename, with {} for the prefix.
+        filename (str): Filename to extract the prefix from.
+
+    Returns:
+        str | None: The extracted prefix or None if not matched.
+    """
+    # Escape special regex chars except {}
+    regex = re.escape(pattern).replace(r"\{\}", "(.+?)")
+    match = re.match(regex, filename)
+    if match:
+        return match.group(1)
+    return None

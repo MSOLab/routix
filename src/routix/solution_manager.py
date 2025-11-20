@@ -101,7 +101,7 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
         if report.obj_bound is not None:
             if self._a_is_better_obj_bound(report.obj_bound, self.best_obj_bound):
                 self.best_obj_bound = report.obj_bound
-                logging.info(f"Objective bound updated: {self.best_obj_bound}")
+                # logging.info(f"Objective bound updated: {self.best_obj_bound}")
 
         # Update incumbent solution if a new solution is provided and is better
         if solution is None:
@@ -139,3 +139,11 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
             if record.solution is not None:
                 return record.solution
         return None
+
+    def get_last_report(self) -> SubroutineReportT | None:
+        """
+        Retrieves the most recent report from the history.
+        """
+        if not self.history:
+            return None
+        return self.history[-1].report

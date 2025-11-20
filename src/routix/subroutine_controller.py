@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
@@ -22,7 +23,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
     def __init__(
         self,
         name: str,
-        subroutine_flow: DynamicDataObject,
+        subroutine_flow: Sequence[DynamicDataObject] | DynamicDataObject,
         stopping_criteria: StoppingCriteriaT,
         start_dt: datetime | None = None,
     ):
@@ -78,7 +79,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
     def get_current_routine_name(self) -> str:
         warn(
             "get_current_routine_name() is deprecated."
-            " Use _get_context_of_current_method() instead."
+            " Use _get_call_context_of_current_method() instead."
         )
         return self._get_call_context_of_current_method()
 
@@ -112,21 +113,26 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         self._run_flow(self._subroutine_flow)
         self.post_run_process()
 
-    def _run_flow(self, routine_data: DynamicDataObject):
+    def _run_flow(
+        self,
+        routine_data: Sequence[DynamicDataObject] | DynamicDataObject,
+        skip_method_call: bool = False,
+    ):
         """
         Runs the subroutine flow defined by routine_data.
         Handles both sequences and single subroutine steps.
         Checks stopping condition before each execution.
 
         Args:
-            routine_data (DynamicDataObject): Subroutine flow data.
+            routine_data (Sequence[DynamicDataObject] | DynamicDataObject): Subroutine flow data.
+            skip_method_call (bool, optional): Whether to skip the method call. Defaults to False.
         """
         if isinstance(routine_data, Sequence) and not isinstance(
             routine_data, (str, bytes)
         ):
             for subroutine_data in routine_data:
                 self._run_flow(subroutine_data)
-        else:  # is an dict-like object
+        elif not isinstance(routine_data, Sequence):  # is a dict-like object
             if self.is_stopping_condition():
                 return
 
@@ -135,7 +141,8 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
             )
 
             self._method_context_mgr.push(method_name)
-            self._call_method(method_name, **kwargs_dict)
+            if not skip_method_call:
+                self._call_method(method_name, **kwargs_dict)
             self._method_context_mgr.pop()
 
     def _call_method(self, method_name: str, **kwargs: dict[str, Any]):
@@ -183,7 +190,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         logging.info(str(log_entry))
 
     @abstractmethod
-    def is_stopping_condition(self) -> bool:
+    def is_stopping_condition(self, **kwargs) -> bool:
         """
         Checks if the stopping condition for the subroutine controller is met.
         This method should be implemented in subclasses.
@@ -226,6 +233,14 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
         return self._random_seed
 
+    @contextmanager
+    def temporarily_extended_context(self, appended_name: str):
+        self._method_context_mgr.push(appended_name)
+        try:
+            yield
+        finally:
+            self._method_context_mgr.pop()
+
     def repeat(self, n_repeats: int, routine_data: DynamicDataObject):
         """
         Repeats the execution of a routine a specified number of times.
@@ -245,9 +260,8 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
                 break
             logging.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
 
-            self._method_context_mgr.push(subroutine_name)
-            self._run_flow(DynamicDataObject.from_obj(routine_data))
-            self._method_context_mgr.pop()
+            with self.temporarily_extended_context(subroutine_name):
+                self._run_flow(DynamicDataObject.from_obj(routine_data))
 
 
 SubroutineControllerT = TypeVar("SubroutineControllerT", bound=SubroutineController)

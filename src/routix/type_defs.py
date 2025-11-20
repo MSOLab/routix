@@ -17,5 +17,8 @@ class RunMode(Enum):
     FULL_RUN = auto()
     """Execute the algorithm and then post-process the results."""
 
+    RESUME = auto()
+    """Resume a run using saved incumbent/flow information and continue execution."""
+
     POST_PROCESS_ONLY = auto()
     """Skip algorithm execution and only run the post-processing step on existing data."""
