@@ -135,15 +135,11 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         elif not isinstance(routine_data, Sequence):  # is a dict-like object
             if self.is_stopping_condition():
                 return
-
             method_name, kwargs_dict = SubroutineFlowKeys.parse_step(
                 routine_data.to_obj()
             )
-
-            self._method_context_mgr.push(method_name)
             if not skip_method_call:
                 self._call_method(method_name, **kwargs_dict)
-            self._method_context_mgr.pop()
 
     def _call_method(self, method_name: str, **kwargs: dict[str, Any]):
         """Dynamically calls a method by its name with the provided keyword arguments.
@@ -160,11 +156,13 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         - Raises an AttributeError if the method does not exist.
         - Useful for executing subroutines defined in the subroutine flow of the experiment.
         """
-
         if not hasattr(self, method_name):
             raise AttributeError(
                 f"{self.__class__.__name__} has no attribute {method_name}"
             )
+        # Push the method name onto the context stack
+        self._method_context_mgr.push(method_name)
+
         start_sec = self.timer.elapsed_sec
         self.method_call_counts[method_name] += 1
 
@@ -188,6 +186,9 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         elapsed_sec = end_sec - start_sec
         log_entry["elapsed_sec"] = elapsed_sec
         logging.info(str(log_entry))
+
+        # Pop the method name from the context stack
+        self._method_context_mgr.pop()
 
     @abstractmethod
     def is_stopping_condition(self, **kwargs) -> bool:
