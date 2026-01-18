@@ -80,7 +80,12 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
         """
         return self._a_is_better_obj_bound(new_bound, self.best_obj_bound)
 
-    def register(self, report: SubroutineReportT, solution: SolutionT | None) -> bool:
+    def register(
+        self,
+        report: SubroutineReportT,
+        solution: SolutionT | None,
+        update_if_equal_obj: bool = False,
+    ) -> bool:
         """
         Registers the result of a subroutine, updates the history, and updates
         the incumbent solution and bound if they are improved.
@@ -118,6 +123,12 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
             self.best_obj_value = new_obj_value
             logging.info(
                 f"Incumbent solution updated with objective: {self.best_obj_value}"
+            )
+            return True
+        elif update_if_equal_obj and new_obj_value == self.best_obj_value:
+            self.incumbent_solution = solution
+            logging.info(
+                f"Incumbent solution updated (equal objective): {self.best_obj_value}"
             )
             return True
 
