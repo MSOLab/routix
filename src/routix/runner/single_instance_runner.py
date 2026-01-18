@@ -84,12 +84,13 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         - If the mode is POST_PROCESS_ONLY, it skips the controller run and directly
         calls the post_run_process method.
         """
-        if self.mode == RunMode.FULL_RUN:
-            self.ctrlr = self.get_controller()
-            self.ctrlr.set_working_dir(self.working_dir)
-            self.ctrlr.run()
-
-        return self.post_run_process()
+        try:
+            if self.mode == RunMode.FULL_RUN:
+                self.ctrlr = self.get_controller()
+                self.ctrlr.set_working_dir(self.working_dir)
+                self.ctrlr.run()
+        finally:
+            return self.post_run_process()
 
     @abstractmethod
     def get_controller(self) -> SubroutineControllerT:
