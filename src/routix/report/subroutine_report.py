@@ -45,18 +45,6 @@ class SubroutineReport:
             "obj_bound": str(self.obj_bound) if self.obj_bound is not None else "",
         }
 
-    def __str__(self) -> str:
-        return (
-            f"SubroutineReport(elapsed_time={self.elapsed_time!s}, "
-            f"obj_value={self.obj_value!s}, obj_bound={self.obj_bound!s}, "
-        )
-
-    def __repr__(self) -> str:
-        return (
-            f"SubroutineReport(elapsed_time={self.elapsed_time!r}, "
-            f"obj_value={self.obj_value!r}, obj_bound={self.obj_bound!r}, "
-        )
-
 
 SubroutineReportT = TypeVar("SubroutineReportT", bound=SubroutineReport)
 """
