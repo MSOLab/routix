@@ -1,9 +1,9 @@
-from typing import Any
+from typing import Any, Final
 
 
 class SubroutineFlowKeys:
-    METHOD = "method"
-    KWARGS = "params"
+    METHOD: Final = "method"
+    KWARGS: Final = "params"
 
     @staticmethod
     def parse_step(step_dict: dict[str, Any]) -> tuple[str, dict[str, Any]]:
@@ -19,3 +19,18 @@ class SubroutineFlowKeys:
         )
 
         return method_name, kwargs_dict
+
+
+class SubroutineReportStatisticsKeys:
+    """Keys for the dictionary representation of SubroutineReportStatistics."""
+
+    INSTANCE_NAME: Final = "insName"
+    FOUND_FEASIBLE_SOL: Final = "foundFeasibleSol"
+    TOTAL_ELAPSED_TIME: Final = "totalElapsedTime"
+    FIRST_OBJ: Final = "firstObj"
+    FIRST_BOUND: Final = "firstBound"
+    BEST_OBJ: Final = "bestObj"
+    BEST_BOUND: Final = "bestBound"
+    IMPROVEMENT_RATIO: Final = "improvementRatio"
+    METHOD_CALL_COUNTS: Final = "methodCallCounts"
+    REPORT_COUNT: Final = "reportCount"
