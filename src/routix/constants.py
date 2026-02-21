@@ -24,7 +24,7 @@ class SubroutineFlowKeys:
 class SubroutineReportStatisticsKeys:
     """Keys for the dictionary representation of SubroutineReportStatistics."""
 
-    INSTANCE_NAME: Final = "instanceName"
+    INSTANCE_NAME: Final = "insName"
     FOUND_FEASIBLE_SOL: Final = "foundFeasibleSol"
     TOTAL_ELAPSED_TIME: Final = "totalElapsedTime"
     FIRST_OBJ: Final = "firstObj"
