@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Generic
 
+from routix.constants import SubroutineReportStatisticsKeys
 from routix.io import object_to_json, object_to_yaml
 
 from .subroutine_report import SubroutineReportT
@@ -124,16 +125,28 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
         first = self.first_report
         best = self.get_best_report(is_maximize=is_maximize)
         return {
-            "instanceName": self.name,
-            "foundFeasibleSol": self.has_valid_objective_value,
-            "totalElapsedTime": self.total_elapsed_time,
-            "firstObj": getattr(first, "obj_value", None) if first else None,
-            "firstBound": getattr(first, "obj_bound", None) if first else None,
-            "bestObj": getattr(best, "obj_value", None) if best else None,
-            "bestBound": getattr(best, "obj_bound", None) if best else None,
-            "improvementRatio": self.get_improvement_ratio(is_maximize),
-            "methodCallCounts": f'"{self.method_call_counts}"',
-            "reportCount": len(self.reports),
+            SubroutineReportStatisticsKeys.INSTANCE_NAME: self.name,
+            SubroutineReportStatisticsKeys.FOUND_FEASIBLE_SOL: self.has_valid_objective_value,
+            SubroutineReportStatisticsKeys.TOTAL_ELAPSED_TIME: self.total_elapsed_time,
+            SubroutineReportStatisticsKeys.FIRST_OBJ: getattr(first, "obj_value", None)
+            if first
+            else None,
+            SubroutineReportStatisticsKeys.FIRST_BOUND: getattr(
+                first, "obj_bound", None
+            )
+            if first
+            else None,
+            SubroutineReportStatisticsKeys.BEST_OBJ: getattr(best, "obj_value", None)
+            if best
+            else None,
+            SubroutineReportStatisticsKeys.BEST_BOUND: getattr(best, "obj_bound", None)
+            if best
+            else None,
+            SubroutineReportStatisticsKeys.IMPROVEMENT_RATIO: self.get_improvement_ratio(
+                is_maximize
+            ),
+            SubroutineReportStatisticsKeys.METHOD_CALL_COUNTS: f'"{self.method_call_counts}"',
+            SubroutineReportStatisticsKeys.REPORT_COUNT: len(self.reports),
         }
 
     def to_yaml(self, file_path: Path, is_maximize: bool = False) -> None:
@@ -161,6 +174,8 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
         return_dict = {k: str(v) for k, v in data.items()}
         # Override dictionary
         # Remove the "defaultdict(...)" wrapper if present, and just use the dict string
-        return_dict["methodCallCounts"] = f'"{str(dict(self.method_call_counts))}"'
+        return_dict[SubroutineReportStatisticsKeys.METHOD_CALL_COUNTS] = (
+            f'"{str(dict(self.method_call_counts))}"'
+        )
 
         return return_dict
