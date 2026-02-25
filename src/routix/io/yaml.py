@@ -1,3 +1,4 @@
+from logging import warning
 from pathlib import Path, PurePath
 from typing import Any
 
@@ -53,6 +54,10 @@ def tuple_to_pyyaml_key(d: dict) -> dict:
 
     Reference: solution_manager.py row 66
     """
+    warning(
+        "DEPRECATED: tuple_to_pyyaml_key will be removed in a future version. Use "
+        "dump_yaml() instead - it automatically handles tuple keys via PrettyKeyDumper."
+    )
     new_dict = {}
     for k, v in d.items():
         if isinstance(k, tuple):
@@ -72,6 +77,10 @@ def pyyaml_key_to_tuple(d: dict) -> dict:
     """
     import re
 
+    warning(
+        "DEPRECATED: pyyaml_key_to_tuple will be removed in a future version. Use "
+        "load_yaml() instead - it automatically normalizes tuple keys via PrettyKeyLoader."
+    )
     tuple_key_pattern = re.compile(r"^!!python/tuple \[(.*)\]$")
     new_dict = {}
     for k, v in d.items():
@@ -83,3 +92,65 @@ def pyyaml_key_to_tuple(d: dict) -> dict:
         else:
             new_dict[k] = v
     return new_dict
+
+
+class PrettyKeyDumper(yaml.SafeDumper):
+    """
+    - Represent tuple as standard YAML sequence
+    - Force flow style [a, b]
+    """
+
+
+def _represent_tuple_as_flow_seq(dumper: PrettyKeyDumper, data: tuple):
+    return dumper.represent_sequence(
+        "tag:yaml.org,2002:seq", list(data), flow_style=True
+    )
+
+
+PrettyKeyDumper.add_representer(tuple, _represent_tuple_as_flow_seq)
+
+
+def dump_yaml(
+    data: Any, path: Path, *, sort_keys: bool = False, encoding: str = "utf-8"
+) -> None:
+    """
+    Pretty YAML dump (supports tuple key)
+    """
+    with open(path, "w", encoding=encoding) as f:
+        yaml.dump(
+            data,
+            f,
+            Dumper=PrettyKeyDumper,
+            sort_keys=sort_keys,
+            allow_unicode=True,
+            default_flow_style=False,
+            width=10_000,
+        )
+
+
+class PrettyKeyLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        if not isinstance(node, yaml.nodes.MappingNode):
+            raise yaml.constructor.ConstructorError(
+                None,
+                None,
+                f"expected a mapping node, but found {node.id}",
+                node.start_mark,
+            )
+
+        mapping = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=True)
+
+            if isinstance(key, list):
+                key = tuple(key)
+
+            value = self.construct_object(value_node, deep=deep)
+            mapping[key] = value
+
+        return mapping
+
+
+def load_yaml(path: Path, encoding: str = "utf-8") -> Any:
+    with open(path, "r", encoding=encoding) as f:
+        return yaml.load(f, Loader=PrettyKeyLoader)
