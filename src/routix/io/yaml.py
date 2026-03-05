@@ -59,7 +59,9 @@ def tuple_to_pyyaml_key(d: dict) -> dict:
     """
     warnings.warn(
         "DEPRECATED: tuple_to_pyyaml_key will be removed in a future version. Use "
-        "dump_yaml() instead - it automatically handles tuple keys via PrettyKeyDumper."
+        "dump_yaml() instead - it automatically handles tuple keys via PrettyKeyDumper.",
+        DeprecationWarning,
+        stacklevel=2,
     )
     new_dict = {}
     for k, v in d.items():
@@ -82,7 +84,9 @@ def pyyaml_key_to_tuple(d: dict) -> dict:
 
     warnings.warn(
         "DEPRECATED: pyyaml_key_to_tuple will be removed in a future version. Use "
-        "load_yaml() instead - it automatically normalizes tuple keys via PrettyKeyLoader."
+        "load_yaml() instead - it automatically normalizes tuple keys via PrettyKeyLoader.",
+        DeprecationWarning,
+        stacklevel=2,
     )
     tuple_key_pattern = re.compile(r"^!!python/tuple \[(.*)\]$")
     new_dict = {}

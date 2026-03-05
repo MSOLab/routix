@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from routix.io.yaml import (
     dump_yaml,
     load_yaml,
@@ -42,7 +44,7 @@ def test_object_to_yaml_with_path_object(tmp_path: Path):
         content = f.read()
     assert str(path_value) in content
 
-    # Path object is saved as custom tag, load back as string
+    # Path object is saved as a YAML string and loaded back as a Python string
     loaded = yaml_to_object(file_path)
     assert loaded["value"] == 42
     assert loaded["path"] == str(path_value)
@@ -71,7 +73,8 @@ def test_yaml_to_object_roundtrip(tmp_path: Path):
 def test_tuple_to_pyyaml_key_simple():
     """Test simple tuple key conversion."""
     d = {("a", "b"): 1, "c": 2}
-    result = tuple_to_pyyaml_key(d)
+    with pytest.warns(DeprecationWarning):
+        result = tuple_to_pyyaml_key(d)
 
     assert "!!python/tuple [a, b]" in result
     assert result["!!python/tuple [a, b]"] == 1
@@ -81,7 +84,8 @@ def test_tuple_to_pyyaml_key_simple():
 def test_tuple_to_pyyaml_key_with_spaces():
     """Test tuple key conversion with spaces in elements."""
     d = {(" a ", " b "): 1}
-    result = tuple_to_pyyaml_key(d)
+    with pytest.warns(DeprecationWarning):
+        result = tuple_to_pyyaml_key(d)
 
     # Spaces should be stripped
     assert "!!python/tuple [a, b]" in result
@@ -90,7 +94,8 @@ def test_tuple_to_pyyaml_key_with_spaces():
 def test_pyyaml_key_to_tuple_simple():
     """Test simple pyyaml key to tuple conversion."""
     d = {"!!python/tuple [a, b]": 1, "c": 2}
-    result = pyyaml_key_to_tuple(d)
+    with pytest.warns(DeprecationWarning):
+        result = pyyaml_key_to_tuple(d)
 
     assert result[("a", "b")] == 1
     assert result["c"] == 2
@@ -99,8 +104,10 @@ def test_pyyaml_key_to_tuple_simple():
 def test_tuple_key_roundtrip():
     """Test tuple key conversion roundtrip."""
     original = {("x", "y"): 10, ("z",): 20, "normal": 30}
-    yaml_formatted = tuple_to_pyyaml_key(original)
-    back = pyyaml_key_to_tuple(yaml_formatted)
+    with pytest.warns(DeprecationWarning):
+        yaml_formatted = tuple_to_pyyaml_key(original)
+    with pytest.warns(DeprecationWarning):
+        back = pyyaml_key_to_tuple(yaml_formatted)
 
     assert back == original
 
