@@ -27,7 +27,8 @@ def test_object_to_yaml_basic(tmp_path: Path):
     """Test basic object to YAML serialization."""
     obj = {"name": "Alice", "age": 30, "items": [1, 2, 3]}
     file_path = tmp_path / "basic.yaml"
-    object_to_yaml(obj, file_path)
+    with pytest.warns(DeprecationWarning):
+        object_to_yaml(obj, file_path)
 
     loaded = yaml_to_object(file_path)
     assert loaded == obj
@@ -38,7 +39,8 @@ def test_object_to_yaml_with_path_object(tmp_path: Path):
     path_value = Path("/some/path/to/file")
     obj = {"path": path_value, "value": 42}
     file_path = tmp_path / "path.yaml"
-    object_to_yaml(obj, file_path)
+    with pytest.warns(DeprecationWarning):
+        object_to_yaml(obj, file_path)
 
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -54,7 +56,8 @@ def test_object_to_yaml_with_to_dict_method(tmp_path: Path):
     """Test object with to_dict method serialization."""
     obj = MockSerializable(value=10, name="test")
     file_path = tmp_path / "serializable.yaml"
-    object_to_yaml(obj, file_path)
+    with pytest.warns(DeprecationWarning):
+        object_to_yaml(obj, file_path)
 
     loaded = yaml_to_object(file_path)
     assert loaded == {"value": 10, "name": "test"}
@@ -64,7 +67,8 @@ def test_yaml_to_object_roundtrip(tmp_path: Path):
     """Test YAML load roundtrip."""
     obj = {"nested": {"data": [1, 2, 3]}, "string": "hello"}
     file_path = tmp_path / "roundtrip.yaml"
-    object_to_yaml(obj, file_path)
+    with pytest.warns(DeprecationWarning):
+        object_to_yaml(obj, file_path)
     loaded = yaml_to_object(file_path)
 
     assert loaded == obj

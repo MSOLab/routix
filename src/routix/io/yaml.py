@@ -19,7 +19,7 @@ def object_to_yaml(obj: Any, path: Path, encoding: str = "utf-8") -> None:
     """
     warnings.warn(
         "DEPRECATED: object_to_yaml will be removed in a future version."
-        " Use dump_yaml() instead - it automatically handles Path objects and to_dict method.",
+        " Use dump_yaml() instead.",
         DeprecationWarning,
         stacklevel=2,
     )
