@@ -17,6 +17,12 @@ def object_to_yaml(obj: Any, path: Path, encoding: str = "utf-8") -> None:
         path (Path): The file path where the YAML will be saved.
         encoding (str, optional): The encoding to use for the file. Defaults to "utf-8".
     """
+    warnings.warn(
+        "DEPRECATED: object_to_yaml will be removed in a future version."
+        " Use dump_yaml() instead - it automatically handles Path objects and to_dict method.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     # Add a representer to handle pathlib.Path objects gracefully
     def path_representer(dumper: yaml.Dumper, data: PurePath) -> yaml.ScalarNode:
