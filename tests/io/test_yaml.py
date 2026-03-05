@@ -33,18 +33,19 @@ def test_object_to_yaml_basic(tmp_path: Path):
 
 def test_object_to_yaml_with_path_object(tmp_path: Path):
     """Test that Path objects are saved as strings."""
-    obj = {"path": "/some/path/to/file", "value": 42}
+    path_value = Path("/some/path/to/file")
+    obj = {"path": path_value, "value": 42}
     file_path = tmp_path / "path.yaml"
     object_to_yaml(obj, file_path)
 
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
-    assert "/some/path/to/file" in content
+    assert str(path_value) in content
 
     # Path object is saved as custom tag, load back as string
     loaded = yaml_to_object(file_path)
     assert loaded["value"] == 42
-    assert "/some/path/to/file" in loaded["path"]
+    assert loaded["path"] == str(path_value)
 
 
 def test_object_to_yaml_with_to_dict_method(tmp_path: Path):
@@ -127,14 +128,16 @@ def test_dump_yaml_with_tuple_key(tmp_path: Path):
 
 
 def test_dump_yaml_with_path_object_converts_to_str(tmp_path: Path):
-    """Test dump_yaml with Path objects converts to str (since PrettyKeyDumper doesn't have path handler)."""
-    obj = {"path1": "/path/one", "path2": "/path/two"}
+    """Test dump_yaml serializes Path objects as strings."""
+    path1 = Path("/path/one")
+    path2 = Path("/path/two")
+    obj = {"path1": path1, "path2": path2}
     file_path = tmp_path / "paths.yaml"
     dump_yaml(obj, file_path)
 
     loaded = load_yaml(file_path)
-    assert loaded["path1"] == "/path/one"
-    assert loaded["path2"] == "/path/two"
+    assert loaded["path1"] == str(path1)
+    assert loaded["path2"] == str(path2)
 
 
 def test_dump_yaml_sort_keys(tmp_path: Path):

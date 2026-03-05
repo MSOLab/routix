@@ -1,8 +1,11 @@
-from logging import warning
+import warnings
 from pathlib import Path, PurePath
 from typing import Any
 
 import yaml
+
+YAML_STR_TAG = yaml.resolver.BaseResolver.DEFAULT_SCALAR_TAG
+YAML_SEQ_TAG = yaml.resolver.BaseResolver.DEFAULT_SEQUENCE_TAG
 
 
 def object_to_yaml(obj: Any, path: Path, encoding: str = "utf-8") -> None:
@@ -16,10 +19,10 @@ def object_to_yaml(obj: Any, path: Path, encoding: str = "utf-8") -> None:
     """
 
     # Add a representer to handle pathlib.Path objects gracefully
-    def path_representer(dumper: yaml.Dumper, data: Path) -> yaml.ScalarNode:
-        return dumper.represent_scalar("!str", str(data))
+    def path_representer(dumper: yaml.Dumper, data: PurePath) -> yaml.ScalarNode:
+        return dumper.represent_scalar(YAML_STR_TAG, str(data))
 
-    yaml.add_representer(Path, path_representer)
+    yaml.add_multi_representer(PurePath, path_representer, Dumper=yaml.Dumper)
 
     # If the object has a to_dict method, use it to get a clean dictionary
     if hasattr(obj, "to_dict") and callable(getattr(obj, "to_dict")):
@@ -31,7 +34,7 @@ def object_to_yaml(obj: Any, path: Path, encoding: str = "utf-8") -> None:
         yaml.dump(data_to_dump, f, default_flow_style=False, sort_keys=False)
 
     # It's good practice to remove the representer if it's not needed globally
-    yaml.Dumper.yaml_representers.pop(Path, None)
+    yaml.Dumper.yaml_multi_representers.pop(PurePath, None)
 
 
 def yaml_to_object(path: PurePath, encoding: str = "utf-8") -> Any:
@@ -54,7 +57,7 @@ def tuple_to_pyyaml_key(d: dict) -> dict:
 
     Reference: solution_manager.py row 66
     """
-    warning(
+    warnings.warn(
         "DEPRECATED: tuple_to_pyyaml_key will be removed in a future version. Use "
         "dump_yaml() instead - it automatically handles tuple keys via PrettyKeyDumper."
     )
@@ -77,7 +80,7 @@ def pyyaml_key_to_tuple(d: dict) -> dict:
     """
     import re
 
-    warning(
+    warnings.warn(
         "DEPRECATED: pyyaml_key_to_tuple will be removed in a future version. Use "
         "load_yaml() instead - it automatically normalizes tuple keys via PrettyKeyLoader."
     )
@@ -102,12 +105,17 @@ class PrettyKeyDumper(yaml.SafeDumper):
 
 
 def _represent_tuple_as_flow_seq(dumper: PrettyKeyDumper, data: tuple):
-    return dumper.represent_sequence(
-        "tag:yaml.org,2002:seq", list(data), flow_style=True
-    )
+    return dumper.represent_sequence(YAML_SEQ_TAG, list(data), flow_style=True)
 
 
 PrettyKeyDumper.add_representer(tuple, _represent_tuple_as_flow_seq)
+
+
+def _represent_path_as_str(dumper: PrettyKeyDumper, data: PurePath):
+    return dumper.represent_scalar(YAML_STR_TAG, str(data))
+
+
+PrettyKeyDumper.add_multi_representer(PurePath, _represent_path_as_str)
 
 
 def dump_yaml(
