@@ -277,11 +277,11 @@ def test_thread_lock_blocks(tmp_path):
                 l2()  # should block until main thread unlocks
                 u2()
                 elapsed = time.time() - t0
-                assert elapsed >= 0.5  # at least half a second blocked
+                assert elapsed >= 0.4  # at least 0.4 seconds blocked
 
         t = threading.Thread(target=worker)
         t.start()
         lock()
-        time.sleep(0.5)
+        time.sleep(0.6)
         unlock()
         t.join()
