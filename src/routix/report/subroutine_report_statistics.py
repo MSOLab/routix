@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Generic
 
 from routix.constants import SubroutineReportStatisticsKeys
-from routix.io import object_to_json, object_to_yaml
+from routix.io import dump_json, dump_yaml
 
 from .subroutine_report import SubroutineReportT
 
@@ -150,10 +150,10 @@ class SubroutineReportStatistics(Generic[SubroutineReportT]):
         }
 
     def to_yaml(self, file_path: Path, is_maximize: bool = False) -> None:
-        object_to_yaml(self.to_dict(is_maximize), file_path)
+        dump_yaml(self.to_dict(is_maximize), file_path)
 
     def to_json(self, file_path: Path, is_maximize: bool = False) -> None:
-        object_to_json(self.to_dict(is_maximize), file_path)
+        dump_json(self.to_dict(is_maximize), file_path)
 
     def to_string_dict(self, is_maximize: bool = False) -> dict[str, str]:
         """

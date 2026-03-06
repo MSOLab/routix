@@ -1,15 +1,6 @@
 from pathlib import Path
 
-import pytest
-
-from routix.io.yaml import (
-    dump_yaml,
-    load_yaml,
-    object_to_yaml,
-    pyyaml_key_to_tuple,
-    tuple_to_pyyaml_key,
-    yaml_to_object,
-)
+from routix.io.yaml import dump_yaml, load_yaml
 
 
 class MockSerializable:
@@ -21,99 +12,6 @@ class MockSerializable:
 
     def to_dict(self) -> dict:
         return {"value": self.value, "name": self.name}
-
-
-def test_object_to_yaml_basic(tmp_path: Path):
-    """Test basic object to YAML serialization."""
-    obj = {"name": "Alice", "age": 30, "items": [1, 2, 3]}
-    file_path = tmp_path / "basic.yaml"
-    with pytest.warns(DeprecationWarning):
-        object_to_yaml(obj, file_path)
-
-    loaded = yaml_to_object(file_path)
-    assert loaded == obj
-
-
-def test_object_to_yaml_with_path_object(tmp_path: Path):
-    """Test that Path objects are saved as strings."""
-    path_value = Path("/some/path/to/file")
-    obj = {"path": path_value, "value": 42}
-    file_path = tmp_path / "path.yaml"
-    with pytest.warns(DeprecationWarning):
-        object_to_yaml(obj, file_path)
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    assert str(path_value) in content
-
-    # Path object is saved as a YAML string and loaded back as a Python string
-    loaded = yaml_to_object(file_path)
-    assert loaded["value"] == 42
-    assert loaded["path"] == str(path_value)
-
-
-def test_object_to_yaml_with_to_dict_method(tmp_path: Path):
-    """Test object with to_dict method serialization."""
-    obj = MockSerializable(value=10, name="test")
-    file_path = tmp_path / "serializable.yaml"
-    with pytest.warns(DeprecationWarning):
-        object_to_yaml(obj, file_path)
-
-    loaded = yaml_to_object(file_path)
-    assert loaded == {"value": 10, "name": "test"}
-
-
-def test_yaml_to_object_roundtrip(tmp_path: Path):
-    """Test YAML load roundtrip."""
-    obj = {"nested": {"data": [1, 2, 3]}, "string": "hello"}
-    file_path = tmp_path / "roundtrip.yaml"
-    with pytest.warns(DeprecationWarning):
-        object_to_yaml(obj, file_path)
-    loaded = yaml_to_object(file_path)
-
-    assert loaded == obj
-
-
-def test_tuple_to_pyyaml_key_simple():
-    """Test simple tuple key conversion."""
-    d = {("a", "b"): 1, "c": 2}
-    with pytest.warns(DeprecationWarning):
-        result = tuple_to_pyyaml_key(d)
-
-    assert "!!python/tuple [a, b]" in result
-    assert result["!!python/tuple [a, b]"] == 1
-    assert result["c"] == 2
-
-
-def test_tuple_to_pyyaml_key_with_spaces():
-    """Test tuple key conversion with spaces in elements."""
-    d = {(" a ", " b "): 1}
-    with pytest.warns(DeprecationWarning):
-        result = tuple_to_pyyaml_key(d)
-
-    # Spaces should be stripped
-    assert "!!python/tuple [a, b]" in result
-
-
-def test_pyyaml_key_to_tuple_simple():
-    """Test simple pyyaml key to tuple conversion."""
-    d = {"!!python/tuple [a, b]": 1, "c": 2}
-    with pytest.warns(DeprecationWarning):
-        result = pyyaml_key_to_tuple(d)
-
-    assert result[("a", "b")] == 1
-    assert result["c"] == 2
-
-
-def test_tuple_key_roundtrip():
-    """Test tuple key conversion roundtrip."""
-    original = {("x", "y"): 10, ("z",): 20, "normal": 30}
-    with pytest.warns(DeprecationWarning):
-        yaml_formatted = tuple_to_pyyaml_key(original)
-    with pytest.warns(DeprecationWarning):
-        back = pyyaml_key_to_tuple(yaml_formatted)
-
-    assert back == original
 
 
 def test_dump_yaml_basic(tmp_path: Path):

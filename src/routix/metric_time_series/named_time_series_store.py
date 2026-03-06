@@ -188,10 +188,10 @@ class NamedTimeSeriesStore(Generic[NumericT]):
             encoding (str, optional): Encoding to use when writing the file.
                 Defaults to "utf-8".
         """
-        from routix.io import object_to_yaml
+        from routix.io import dump_yaml
 
         path = Path(file_path)
-        object_to_yaml(self.to_dict(), path, encoding=encoding)
+        dump_yaml(self.to_dict(), path, encoding=encoding)
 
     @classmethod
     def load_yaml(
@@ -223,10 +223,10 @@ class NamedTimeSeriesStore(Generic[NumericT]):
             encoding (str, optional): Encoding to use when writing the file.
                 Defaults to "utf-8".
         """
-        from routix.io import object_to_json
+        from routix.io import dump_json
 
         path = Path(file_path)
-        object_to_json(self.to_dict(), path, encoding=encoding)
+        dump_json(self.to_dict(), path, encoding=encoding)
 
     @classmethod
     def load_json(

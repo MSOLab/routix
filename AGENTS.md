@@ -76,7 +76,7 @@ Runners support explicit execution modes via `RunMode` enum:
 
 ## File I/O Utilities
 
-- **`object_to_yaml` / `object_to_json`**: Serialize Python objects to YAML/JSON
+- **`dump_json`**: Serialize Python objects to JSON
 - **`init_timestamped_working_dir`**: Create timestamped directories for experiment outputs
 - **`load_yaml` / `dump_yaml`**: YAML utilities with tuple key support
 

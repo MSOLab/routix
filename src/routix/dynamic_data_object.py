@@ -2,7 +2,7 @@ import json
 from pathlib import Path, PurePath
 from typing import Any, Self, Sequence, TypeVar
 
-from .io import object_to_json, object_to_yaml, yaml_to_object
+from .io import dump_json, dump_yaml, load_yaml
 
 
 class DynamicDataObject:
@@ -134,14 +134,14 @@ class DynamicDataObject:
         except json.JSONDecodeError as e:
             raise ValueError(f"Error parsing JSON from file {file_path}: {e}")
 
-    def to_json(self, file_path: Path, encoding="utf-8") -> None:
+    def to_json(self, file_path: PurePath, encoding="utf-8") -> None:
         """Serializes the object's data to a JSON file at the specified file path.
 
         Args:
             file_path (Path): The path where the JSON file will be saved.
             encoding (str): Encoding to use for the file. Defaults to "utf-8".
         """
-        object_to_json(self.to_obj(), file_path, encoding=encoding)
+        dump_json(self.to_obj(), file_path, encoding=encoding)
 
     @classmethod
     def from_yaml(cls, file_path: PurePath, encoding="utf-8") -> Any:
@@ -158,7 +158,7 @@ class DynamicDataObject:
             Any: a class instance created from the YAML data in the file.
         """
         try:
-            yaml_data = yaml_to_object(file_path, encoding=encoding)
+            yaml_data = load_yaml(file_path, encoding=encoding)
             return cls.from_obj(yaml_data)
         except (IOError, OSError) as e:
             raise RuntimeError(f"Error reading from file {file_path}: {e}")
@@ -172,7 +172,7 @@ class DynamicDataObject:
             file_path (Path): The path where the YAML file will be saved.
             encoding (str): Encoding to use for the file. Defaults to "utf-8".
         """
-        object_to_yaml(self.to_obj(), file_path, encoding=encoding)
+        dump_yaml(self.to_obj(), file_path, encoding=encoding)
 
     @staticmethod
     def safe_save_yaml(data_obj: Any, file_path: Path, encoding: str = "utf-8") -> None:
@@ -194,11 +194,11 @@ class DynamicDataObject:
                     item.to_obj() if isinstance(item, DynamicDataObject) else item
                     for item in data_obj
                 ]
-                object_to_yaml(data_to_save, file_path, encoding=encoding)
+                dump_yaml(data_to_save, file_path, encoding=encoding)
             except (IOError, OSError) as e:
                 raise RuntimeError(f"Error writing to file {file_path}: {e}")
         else:
-            object_to_yaml(data_obj, file_path, encoding=encoding)
+            dump_yaml(data_obj, file_path, encoding=encoding)
 
 
 DynamicDataObjectT = TypeVar("DynamicDataObjectT", bound=DynamicDataObject)
