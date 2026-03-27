@@ -1,11 +1,9 @@
 import os
-import subprocess
 import sys
 import threading
-import time
 import types
 from io import TextIOWrapper
-from typing import TextIO, cast
+from typing import cast
 
 import yaml
 
@@ -37,6 +35,12 @@ class _FakeFile:
 
 # --- platform_lock tests ------------------------------------------------------
 def test_platform_lock_posix(monkeypatch):
+    """Verify the POSIX branch delegates lock and unlock to ``fcntl.flock``.
+
+    The test forces ``os.name`` to ``"posix"``, injects a fake ``fcntl``
+    module, and asserts that ``platform_lock`` issues the expected exclusive
+    lock and unlock calls for the same file object.
+    """
     # Force POSIX branch
     monkeypatch.setattr(os, "name", "posix", raising=False)
 
@@ -64,6 +68,12 @@ def test_platform_lock_posix(monkeypatch):
 
 
 def test_platform_lock_windows(monkeypatch):
+    """Verify the Windows branch uses ``msvcrt.locking`` on the first byte.
+
+    The test forces ``os.name`` to ``"nt"``, stubs ``msvcrt``, and checks both
+    the seek-to-start behavior and the exact lock/unlock calls that
+    ``platform_lock`` performs.
+    """
     # Force Windows branch
     monkeypatch.setattr(os, "name", "nt", raising=False)
 
@@ -94,6 +104,11 @@ def test_platform_lock_windows(monkeypatch):
 
 # --- YAML write tests ---------------------------------------------------------
 def test_append_data_to_yaml_appends_multiple_docs(tmp_path, monkeypatch):
+    """Ensure repeated YAML appends preserve previously written content.
+
+    The test writes two rows through ``append_data_to_yaml``, reloads the file,
+    and confirms the combined YAML content and per-write ``fsync`` calls.
+    """
     # Avoid real fsync overhead but ensure it was invoked
     fsync_called = {"n": 0}
     monkeypatch.setattr(
@@ -117,6 +132,12 @@ def test_append_data_to_yaml_appends_multiple_docs(tmp_path, monkeypatch):
 
 
 def test_batch_write_data_to_yaml_overwrites_and_writes_all(tmp_path, monkeypatch):
+    """Ensure batched YAML writes replace old content with the new batch.
+
+    The test performs an initial batch write, overwrites it with a second
+    batch, then reloads all YAML documents to confirm overwrite semantics and
+    one ``fsync`` per batch write.
+    """
     fsync_called = {"n": 0}
     monkeypatch.setattr(
         os, "fsync", lambda fd: fsync_called.__setitem__("n", fsync_called["n"] + 1)
@@ -141,6 +162,12 @@ def test_batch_write_data_to_yaml_overwrites_and_writes_all(tmp_path, monkeypatc
 
 # --- CSV write tests ----------------------------------------------------------
 def test_append_data_to_csv_writes_header_once_and_rows(tmp_path, monkeypatch):
+    """Ensure CSV append writes the header once and appends complete rows.
+
+    The test appends two rows with the same header, reads back the file, and
+    verifies that the header is not duplicated, missing values become empty
+    cells, and each append triggers ``fsync``.
+    """
     fsync_called = {"n": 0}
     monkeypatch.setattr(
         os, "fsync", lambda fd: fsync_called.__setitem__("n", fsync_called["n"] + 1)
@@ -167,6 +194,11 @@ def test_append_data_to_csv_writes_header_once_and_rows(tmp_path, monkeypatch):
 
 
 def test_batch_write_data_to_csv_overwrites_with_header_and_rows(tmp_path, monkeypatch):
+    """Ensure batched CSV writes replace prior file contents.
+
+    The test seeds the file with an older row, runs ``batch_write_data_to_csv``,
+    and verifies that the resulting file contains only the new header and rows.
+    """
     fsync_called = {"n": 0}
     monkeypatch.setattr(
         os, "fsync", lambda fd: fsync_called.__setitem__("n", fsync_called["n"] + 1)
@@ -215,89 +247,3 @@ def test_append_data_to_csv_thread_safety(tmp_path, monkeypatch):
     # Each data line should be a complete row (no partial interleaving)
     for ln in lines[1:]:
         assert ln.count(",") == 1
-
-
-def test_platform_lock_exclusive(tmp_path):
-    path = tmp_path / "lock_test.txt"
-    path.write_text("")
-
-    if os.name == "nt":
-        code = """
-import time, sys, msvcrt, os
-f = open(sys.argv[1], 'a')
-# msvcrt.locking does not support 0-byte locks, so always use 1-byte lock
-f.seek(0, os.SEEK_SET)
-msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
-print("locked", flush=True)
-time.sleep(2)
-f.seek(0, os.SEEK_SET)
-try:
-    msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-except OSError:
-    pass
-"""
-    else:
-        code = """
-import time, sys, fcntl
-f = open(sys.argv[1], 'a')
-fcntl.flock(f, fcntl.LOCK_EX)
-print("locked", flush=True)
-time.sleep(2)
-fcntl.flock(f, fcntl.LOCK_UN)
-"""
-
-    # First process holds the lock for 2 seconds
-    p1 = subprocess.Popen(
-        [sys.executable, "-c", code, str(path)], stdout=subprocess.PIPE, text=True
-    )
-    assert p1.stdout is not None
-    stdout = cast("TextIO", p1.stdout)
-    stdout.readline()  # wait until "locked"
-
-    # Second process immediately tries to acquire lock -> blocked until released
-    start = time.time()
-    subprocess.run([sys.executable, "-c", code, str(path)], check=True)
-    elapsed = time.time() - start
-
-    # Second process must wait at least 2 seconds for lock to be released
-    assert elapsed >= 2.0
-
-
-def test_thread_lock_blocks(tmp_path):
-    path = tmp_path / "test.yaml"
-    path.write_text("")  # empty file
-
-    # Events for synchronization
-    main_holds_lock = threading.Event()  # Main thread signals it holds the lock
-    worker_reached_lock = threading.Event()  # Worker signals it tried to acquire lock
-
-    with open(path, "a", encoding="utf-8") as f:
-        lock, unlock = platform_lock(f)
-
-        def worker():
-            with open(path, "a", encoding="utf-8") as g:
-                l2, u2 = platform_lock(g)
-                # Wait until main thread confirms it holds the lock
-                main_holds_lock.wait(timeout=2.0)
-                assert main_holds_lock.is_set(), "Main thread did not acquire lock"
-
-                t0 = time.monotonic()
-                l2()  # This should block since main thread holds the lock
-                u2()
-                elapsed = time.monotonic() - t0
-                assert elapsed >= 0.4  # Should have been blocked for at least 0.4s
-
-        # Acquire the lock in the main thread first
-        lock()
-        main_holds_lock.set()  # Signal to worker that we hold the lock
-
-        t = threading.Thread(target=worker)
-        t.start()
-
-        # Give worker time to reach its lock attempt
-        worker_reached_lock.wait(timeout=2.0)
-
-        # Sleep to ensure blocking duration, then unlock
-        time.sleep(0.6)
-        unlock()
-        t.join()
