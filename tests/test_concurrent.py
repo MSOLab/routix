@@ -273,15 +273,16 @@ def test_thread_lock_blocks(tmp_path):
         def worker():
             with open(path, "a", encoding="utf-8") as g:
                 l2, u2 = platform_lock(g)
-                t0 = time.time()
+                t0 = time.monotonic()
                 l2()  # should block until main thread unlocks
                 u2()
-                elapsed = time.time() - t0
+                elapsed = time.monotonic() - t0
                 assert elapsed >= 0.4  # at least 0.4 seconds blocked
 
+        # Acquire the lock in the main thread before starting the worker
+        lock()
         t = threading.Thread(target=worker)
         t.start()
-        lock()
         time.sleep(0.6)
         unlock()
         t.join()

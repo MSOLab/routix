@@ -126,18 +126,6 @@ class ElapsedTimer:
         """
         return time.monotonic() - self._start_monotonic
 
-    def get_elapsed_sec(self) -> float:
-        """
-        Returns:
-            float: Seconds elapsed since the handler was initiated
-        """
-        warn(
-            "get_elapsed_sec() is deprecated, use elapsed_sec property instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.elapsed_sec
-
     def get_formatted_elapsed_time(self) -> str:
         """Returns the elapsed time since the timer was started, formatted as a string."""
         elapsed_time = timedelta(seconds=self.elapsed_sec)

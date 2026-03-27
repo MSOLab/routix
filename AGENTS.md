@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 This file provides guidelines for Claude Code (and other AI agents) working on the `routix` project.
 

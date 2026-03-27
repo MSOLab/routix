@@ -54,7 +54,9 @@ Build custom workflow runners by extending these abstract base classes to fit yo
 
 `routix` includes helper functions to streamline file I/O for experiments.
 
-- **`dump_yaml / dump_json`**: Serialize Python objects (including those with `to_dict()` methods and `pathlib.Path` objects) into clean and readable YAML or JSON files.
+- **`dump_yaml / dump_json`**: Serialize Python objects into clean and readable YAML or JSON files.
+  - Objects should be composed of standard serializable types (e.g., dicts, lists, numbers, strings).
+  - Non-serializable objects should be converted (e.g., via `to_dict()` or `str()`) before calling these functions.
 - **`init_timestamped_working_dir`**: Creates a unique, timestamped directory for storing experiment outputs, helping to keep results organized.
 
 ## Installation

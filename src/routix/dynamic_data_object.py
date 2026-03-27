@@ -138,7 +138,7 @@ class DynamicDataObject:
         """Serializes the object's data to a JSON file at the specified file path.
 
         Args:
-            file_path (Path): The path where the JSON file will be saved.
+            file_path (PurePath): The path where the JSON file will be saved.
             encoding (str): Encoding to use for the file. Defaults to "utf-8".
         """
         dump_json(self.to_obj(), file_path, encoding=encoding)
