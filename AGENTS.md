@@ -1,6 +1,6 @@
-# AGENTS.md
+# CLAUDE.md
 
-This document provides guidelines for AI coding agents working on the `routix` project.
+This file provides guidelines for Claude Code (and other AI agents) working on the `routix` project.
 
 ## Project Overview
 
@@ -80,24 +80,29 @@ Runners support explicit execution modes via `RunMode` enum:
 - **`init_timestamped_working_dir`**: Create timestamped directories for experiment outputs
 - **`load_yaml` / `dump_yaml`**: YAML utilities with tuple key support
 
-## Best Practices
+## Code Conventions
 
-### For New Code
+### Naming Conventions
 
-- Prefer TypeScript-style clear naming; use Pythonic conventions (`snake_case` for functions, `PascalCase` for classes)
-- Follow the Single Responsibility Principle in class design
+- Use `snake_case` for functions and variables
+- Use `PascalCase` for classes
+- Use clear, descriptive names
+
+### Design Principles
+
+- Follow the **Single Responsibility Principle** in class design
 - Co-locate related code; use the existing module structure as a guide
-- Add tests for new functionality
+- Write tests for all new functionality
 
-### For File Organization
+## File Organization
 
-- Source code: `src/routix/`
-- Tests: `tests/`
-- I/O utilities: `src/routix/io/`
-- Report system: `src/routix/report/`
-- Runner classes: `src/routix/runner/`
+- **Source code**: `src/routix/`
+- **Tests**: `tests/`
+- **I/O utilities**: `src/routix/io/`
+- **Report system**: `src/routix/report/`
+- **Runner classes**: `src/routix/runner/`
 
-### Common Commands
+## Common Commands
 
 - Run all tests: `uv run pytest`
 - Run specific test file: `uv run pytest tests/test_<filename>.py`
@@ -105,7 +110,7 @@ Runners support explicit execution modes via `RunMode` enum:
 
 ## Pull Request Guidelines
 
-- Run test before committing - all tests must pass
+- Run tests before committing - all tests must pass
 - Ensure code follows existing patterns and conventions
 - Update tests for any new or modified functionality
 - PR title format: `[<module_name>] <description>`
