@@ -267,22 +267,37 @@ def test_thread_lock_blocks(tmp_path):
     path = tmp_path / "test.yaml"
     path.write_text("")  # empty file
 
+    # Events for synchronization
+    main_holds_lock = threading.Event()  # Main thread signals it holds the lock
+    worker_reached_lock = threading.Event()  # Worker signals it tried to acquire lock
+
     with open(path, "a", encoding="utf-8") as f:
         lock, unlock = platform_lock(f)
 
         def worker():
             with open(path, "a", encoding="utf-8") as g:
                 l2, u2 = platform_lock(g)
+                # Wait until main thread confirms it holds the lock
+                main_holds_lock.wait(timeout=2.0)
+                assert main_holds_lock.is_set(), "Main thread did not acquire lock"
+
                 t0 = time.monotonic()
-                l2()  # should block until main thread unlocks
+                l2()  # This should block since main thread holds the lock
                 u2()
                 elapsed = time.monotonic() - t0
-                assert elapsed >= 0.4  # at least 0.4 seconds blocked
+                assert elapsed >= 0.4  # Should have been blocked for at least 0.4s
 
-        # Acquire the lock in the main thread before starting the worker
+        # Acquire the lock in the main thread first
         lock()
+        main_holds_lock.set()  # Signal to worker that we hold the lock
+
         t = threading.Thread(target=worker)
         t.start()
+
+        # Give worker time to reach its lock attempt
+        worker_reached_lock.wait(timeout=2.0)
+
+        # Sleep to ensure blocking duration, then unlock
         time.sleep(0.6)
         unlock()
         t.join()

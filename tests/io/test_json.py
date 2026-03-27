@@ -72,7 +72,7 @@ def test_dump_json_with_serializable_object(tmp_path: Path):
 
 def test_dump_json_with_nested_path_and_serializable(tmp_path: Path):
     """Test dump_json with nested structure containing Path and serializable objects."""
-    # Use WindowsPath for cross-platform compatibility
+    # Use Path and PurePath for cross-platform compatibility
     obj = {
         "output_dir": Path("/output/results"),
         "config": MockSerializable(value=100, name="nested"),

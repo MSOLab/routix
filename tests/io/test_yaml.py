@@ -3,17 +3,6 @@ from pathlib import Path
 from routix.io.yaml import dump_yaml, load_yaml
 
 
-class MockSerializable:
-    """Mock class with to_dict method for testing."""
-
-    def __init__(self, value: int, name: str):
-        self.value = value
-        self.name = name
-
-    def to_dict(self) -> dict:
-        return {"value": self.value, "name": self.name}
-
-
 def test_dump_yaml_basic(tmp_path: Path):
     """Test dump_yaml function."""
     obj = {"key": "value", "number": 42}
