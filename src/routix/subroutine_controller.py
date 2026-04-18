@@ -68,6 +68,14 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         self._working_dir_path = Path(dir_path)
         self._working_dir_path.mkdir(parents=True, exist_ok=True)
 
+    def get_current_method_name(self) -> str:
+        """
+        Returns:
+            str: The name of the current method being executed,
+                which is the last entry in the method context stack.
+        """
+        return self._method_context_mgr.peek()
+
     def _get_call_context_of_current_method(self) -> str:
         """
         Returns:
@@ -75,13 +83,6 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
             formatted as "count-name.count-name..." for each name in the call stack.
         """
         return self._method_context_mgr.context_of_current_method
-
-    def get_current_routine_name(self) -> str:
-        warn(
-            "get_current_routine_name() is deprecated."
-            " Use _get_call_context_of_current_method() instead."
-        )
-        return self._get_call_context_of_current_method()
 
     def get_file_path_for_subroutine(self, filename_suffix: str) -> Path:
         """Get the file path for a subroutine output file.

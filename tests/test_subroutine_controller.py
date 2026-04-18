@@ -46,6 +46,18 @@ def test_set_working_dir(mock_controller: MockSubroutineController):
     temp_dir.rmdir()
 
 
+def test_get_current_method_name(mock_controller: MockSubroutineController):
+    mock_controller._method_context_mgr.push("step1")
+    assert mock_controller.get_current_method_name() == "step1"
+
+
+def test_get_current_method_name_multiple_push(mock_controller: MockSubroutineController):
+    mock_controller._method_context_mgr.push("step1")
+    mock_controller._method_context_mgr.push("step2")
+    mock_controller._method_context_mgr.push("step3")
+    assert mock_controller.get_current_method_name() == "step3"
+
+
 def test_get_call_context_of_current_method(mock_controller: MockSubroutineController):
     mock_controller._method_context_mgr.push("step1")
     assert mock_controller._get_call_context_of_current_method() == "1-step1"
