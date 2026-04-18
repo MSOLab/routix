@@ -14,8 +14,8 @@ dependencies = []
 Repository = "https://github.com/MSOlab/routix.git"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.11.2,<0.12"]
+build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
