@@ -29,6 +29,7 @@ class MultiInstanceConcurrentRunner(
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
         instance_worker_cnt: int = 2,
+        logger: logging.Logger | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -40,6 +41,7 @@ class MultiInstanceConcurrentRunner(
             output_dir,
             output_metadata,
             mode,
+            logger=logger,
         )
         self.set_instance_worker_cnt(instance_worker_cnt)
 
@@ -67,13 +69,13 @@ class MultiInstanceConcurrentRunner(
             instance_worker_cnt (int): The number of workers for concurrent execution.
         """
         if instance_worker_cnt < 1:
-            logging.warning(
+            self.logger.warning(
                 f"Given instance_worker_cnt {instance_worker_cnt} is less than 1. "
                 "Setting instance_worker_cnt to 1."
             )
             self._instance_worker_cnt = 1
         else:
-            logging.info(f"Setting instance_worker_cnt to {instance_worker_cnt}")
+            self.logger.info(f"Setting instance_worker_cnt to {instance_worker_cnt}")
             self._instance_worker_cnt = instance_worker_cnt
 
     def run(self) -> Any:

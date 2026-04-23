@@ -26,7 +26,14 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         subroutine_flow: Sequence[DynamicDataObject] | DynamicDataObject,
         stopping_criteria: StoppingCriteriaT,
         start_dt: datetime | None = None,
+        logger: logging.Logger | None = None,
     ):
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
+
         # Set the timer
         e_timer = ElapsedTimer()
         if start_dt is not None:
@@ -180,13 +187,13 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
             elapsed_sec = end_sec - start_sec
             log_entry["elapsed_sec"] = elapsed_sec
             log_entry["error"] = str(e)
-            logging.error(str(log_entry))
+            self.logger.error(str(log_entry))
             raise e
 
         end_sec = self.timer.elapsed_sec
         elapsed_sec = end_sec - start_sec
         log_entry["elapsed_sec"] = elapsed_sec
-        logging.info(str(log_entry))
+        self.logger.info(str(log_entry))
 
         # Pop the method name from the context stack
         self._method_context_mgr.pop()
@@ -256,11 +263,11 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
 
         for i in range(n_repeats):
             if self.is_stopping_condition():
-                logging.info(
+                self.logger.info(
                     f"[Repeat] Stopping condition met at iteration {i + 1}/{n_repeats}."
                 )
                 break
-            logging.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
+            self.logger.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
 
             with self.temporarily_extended_context(subroutine_name):
                 self._run_flow(DynamicDataObject.from_obj(routine_data))

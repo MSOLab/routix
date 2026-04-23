@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, TypeVar
@@ -27,7 +28,13 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         output_dir: Path,
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
+        logger: logging.Logger | None = None,
     ):
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
         self.e_timer = ElapsedTimer()
         """Elapsed timer for single-instance run."""
         if dt := output_metadata.get("start_dt"):

@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from src.routix.constants import SubroutineFlowKeys
@@ -38,6 +40,16 @@ def mock_controller_class():
 @pytest.fixture
 def validator(mock_controller_class):
     return SubroutineFlowValidator(mock_controller_class)
+
+
+def test_default_logger_uses_hierarchical_name(validator: SubroutineFlowValidator):
+    assert validator.logger.name == "routix.SubroutineFlowValidator"
+
+
+def test_injected_logger_is_used(mock_controller_class):
+    custom = logging.getLogger("test.custom.validator")
+    validator = SubroutineFlowValidator(mock_controller_class, logger=custom)
+    assert validator.logger is custom
 
 
 def test_validate_valid_flow(validator: SubroutineFlowValidator):

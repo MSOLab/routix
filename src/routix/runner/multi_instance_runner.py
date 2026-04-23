@@ -1,5 +1,4 @@
 import logging
-import traceback
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
@@ -29,8 +28,14 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         output_dir: Path,
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
+        logger: logging.Logger | None = None,
         **kwargs: Any,
     ) -> None:
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
         self.e_timer = ElapsedTimer()
         """Elapsed timer for multi-instance run."""
 
@@ -64,7 +69,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             try:
                 self._load_resume_data()
             except Exception as e:
-                logging.exception(f"Loading resume data failed: {e}")
+                self.logger.exception(f"Loading resume data failed: {e}")
 
     def _set_start_dt(self) -> None:
         """
@@ -194,7 +199,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         """
         if flow_resume_idx < 0:
             raise ValueError("flow_resume_idx must be non-negative")
-        logging.info(f"Setting flow_resume_idx to {flow_resume_idx}")
+        self.logger.info(f"Setting flow_resume_idx to {flow_resume_idx}")
         self.flow_resume_idx = flow_resume_idx
         for runner in self.runners:
             runner.flow_resume_idx = flow_resume_idx
@@ -204,8 +209,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             try:
                 result = runner.run()
             except Exception as e:
-                logging.error(f"Error in instance {runner.ins_name}: {e}")
-                traceback.print_exc()
+                self.logger.exception(f"Error in instance {runner.ins_name}: {e}")
                 result = None
             self.results.append(result)
 

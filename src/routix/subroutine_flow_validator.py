@@ -8,8 +8,17 @@ from .dynamic_data_object import DynamicDataObject
 
 
 class SubroutineFlowValidator:
-    def __init__(self, controller_class: type):
+    def __init__(
+        self,
+        controller_class: type,
+        logger: logging.Logger | None = None,
+    ):
         self.controller_class = controller_class
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
 
     def validate(self, flow: DynamicDataObject) -> bool:
         errors = self.get_invalid_blocks(flow)
@@ -166,8 +175,6 @@ class SubroutineFlowValidator:
         float, str, bool, None) so comparisons are predictable across runs.
         """
 
-        logger = logging.getLogger(__name__)
-
         # track visited container/object ids to detect cycles (id-based)
         seen: set[int] = set()
 
@@ -178,7 +185,9 @@ class SubroutineFlowValidator:
                     try:
                         x = x.to_obj()
                     except Exception:
-                        logger.exception("DynamicDataObject.to_obj() failed for %r", x)
+                        self.logger.exception(
+                            "DynamicDataObject.to_obj() failed for %r", x
+                        )
                         raise
             except Exception:
                 # If isinstance check itself fails for some reason, propagate

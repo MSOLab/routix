@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -13,8 +14,10 @@ from src.routix.subroutine_controller import SubroutineController
 class MockSubroutineController(
     SubroutineController[StoppingCriteria, SubroutineReport]
 ):
-    def __init__(self, name, subroutine_flow, stopping_criteria, start_dt=None):
-        super().__init__(name, subroutine_flow, stopping_criteria, start_dt)
+    def __init__(
+        self, name, subroutine_flow, stopping_criteria, start_dt=None, logger=None
+    ):
+        super().__init__(name, subroutine_flow, stopping_criteria, start_dt, logger)
         self._stop_condition_met = False
         self.mock_method = lambda **kwargs: None  # Default callable
 
@@ -99,3 +102,32 @@ def test_is_stopping_condition(mock_controller: MockSubroutineController):
 def test_set_random_seed(mock_controller: MockSubroutineController):
     mock_controller.set_random_seed(42)
     assert mock_controller.random_seed == 42
+
+
+def test_default_logger_uses_hierarchical_name(
+    mock_controller: MockSubroutineController,
+):
+    assert mock_controller.logger.name == "routix.MockSubroutineController"
+
+
+def test_injected_logger_is_used():
+    subroutine_flow = DynamicDataObject.from_obj(
+        [{SubroutineFlowKeys.METHOD: "mock_method"}]
+    )
+    stopping_criteria = StoppingCriteria({"criteria": "value"})
+    custom = logging.getLogger("test.custom.controller")
+    ctrlr = MockSubroutineController(
+        "test", subroutine_flow, stopping_criteria, logger=custom
+    )
+    assert ctrlr.logger is custom
+
+
+def test_call_method_log_record_uses_controller_logger(
+    mock_controller: MockSubroutineController, caplog: pytest.LogCaptureFixture
+):
+    mock_controller.mock_method = MagicMock()
+    with caplog.at_level(logging.INFO, logger="routix.MockSubroutineController"):
+        mock_controller._call_method("mock_method", param1="value1")
+    assert any(
+        rec.name == "routix.MockSubroutineController" for rec in caplog.records
+    )
