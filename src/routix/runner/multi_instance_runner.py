@@ -91,6 +91,15 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         self.working_dir = self.output_dir
         self.working_dir.mkdir(parents=True, exist_ok=True)
 
+    def _make_runner_logger(self, instance: ParametersT) -> logging.Logger | None:
+        """Hook for subclasses to provide per-instance loggers.
+
+        Default ``None`` lets the single-instance runner fall back to its own
+        ``getLogger(f"routix.{class_name}")``. Override to attach instance
+        runners to a project-specific logger tree.
+        """
+        return None
+
     def _init_single_instance_runners(self) -> None:
         """Initializes the single instance runners for each instance."""
         self.runners.clear()
@@ -106,6 +115,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
                 output_dir=self.output_dir,
                 output_metadata=self.output_metadata,
                 mode=self.mode,
+                logger=self._make_runner_logger(instance),
             )
             self.runners.append(runner)
 

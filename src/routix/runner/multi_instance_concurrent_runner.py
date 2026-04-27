@@ -1,7 +1,7 @@
 import concurrent.futures
 import logging
 from pathlib import Path
-from typing import Any, Generic, Sequence
+from typing import Any, Callable, Generic, Sequence
 
 from ..type_defs import ParametersT, RunMode
 from .multi_instance_runner import MultiInstanceRunner
@@ -30,6 +30,8 @@ class MultiInstanceConcurrentRunner(
         mode: RunMode = RunMode.FULL_RUN,
         instance_worker_cnt: int = 2,
         logger: logging.Logger | None = None,
+        pool_initializer: Callable[..., None] | None = None,
+        pool_initargs: tuple = (),
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -44,6 +46,8 @@ class MultiInstanceConcurrentRunner(
             logger=logger,
         )
         self.set_instance_worker_cnt(instance_worker_cnt)
+        self._pool_initializer = pool_initializer
+        self._pool_initargs = pool_initargs
 
     def get_instance_worker_cnt(self) -> int:
         """
@@ -84,7 +88,9 @@ class MultiInstanceConcurrentRunner(
             return super().run()
 
         with concurrent.futures.ProcessPoolExecutor(
-            max_workers=instance_worker_cnt
+            max_workers=instance_worker_cnt,
+            initializer=self._pool_initializer,
+            initargs=self._pool_initargs,
         ) as executor:
             # Submit the run method of each pre-created runner instance
             futures = {executor.submit(runner.run): runner for runner in self.runners}
