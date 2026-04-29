@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any, Callable, Generic, Sequence
 
+from ..io import ArtifactLayout
 from ..type_defs import ParametersT, RunMode
 from .multi_instance_runner import MultiInstanceRunner
 from .single_instance_runner import SingleInstanceRunnerT
@@ -32,6 +33,7 @@ class MultiInstanceConcurrentRunner(
         logger: logging.Logger | None = None,
         pool_initializer: Callable[..., None] | None = None,
         pool_initargs: tuple = (),
+        layout: ArtifactLayout | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -44,6 +46,7 @@ class MultiInstanceConcurrentRunner(
             output_metadata,
             mode,
             logger=logger,
+            layout=layout,
         )
         self.set_instance_worker_cnt(instance_worker_cnt)
         self._pool_initializer = pool_initializer

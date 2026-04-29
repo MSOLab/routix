@@ -815,10 +815,10 @@ def _validate_scenario_uniqueness(scenarios: list[dict]) -> None:
       (final/progress/report zone 정의 포함)
 - [x] `routix/src/routix/io/artifact_layout.py` 신설 (`ArtifactLayout` base
       class + `zone_dir`, `register_kind` API)
-- [ ] `routix/src/routix/io/path.py`에 `init_run_root` 추가
-- [ ] `MultiScenarioRunner`, `MultiInstanceRunner`, `MultiInstanceConcurrentRunner`,
+- [x] `routix/src/routix/io/path.py`에 `init_run_root` 추가
+- [x] `MultiScenarioRunner`, `MultiInstanceRunner`, `MultiInstanceConcurrentRunner`,
       `SingleInstanceRunner`에 `layout` 파라미터 추가 (default None)
-- [ ] `SubroutineController.set_artifact_layout` 추가
+- [x] `SubroutineController.set_artifact_layout` 추가
 - [ ] (후순위) `routix.logging.IsolatedLogScope` — SC 격벽용 attach/detach helper
       (named logger에 file+stream handler attach + `propagate=False` 세팅,
       종료 시 원복). ffc 쪽 패턴이 안정된 후 끌어올림.

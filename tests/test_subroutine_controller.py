@@ -6,6 +6,7 @@ import pytest
 
 from src.routix.constants import SubroutineFlowKeys
 from src.routix.dynamic_data_object import DynamicDataObject
+from src.routix.io import ArtifactLayout
 from src.routix.report.subroutine_report import SubroutineReport
 from src.routix.stopping_criteria import StoppingCriteria
 from src.routix.subroutine_controller import SubroutineController
@@ -54,7 +55,9 @@ def test_get_current_method_name(mock_controller: MockSubroutineController):
     assert mock_controller.get_current_method_name() == "step1"
 
 
-def test_get_current_method_name_multiple_push(mock_controller: MockSubroutineController):
+def test_get_current_method_name_multiple_push(
+    mock_controller: MockSubroutineController,
+):
     mock_controller._method_context_mgr.push("step1")
     mock_controller._method_context_mgr.push("step2")
     mock_controller._method_context_mgr.push("step3")
@@ -128,6 +131,49 @@ def test_call_method_log_record_uses_controller_logger(
     mock_controller.mock_method = MagicMock()
     with caplog.at_level(logging.INFO, logger="routix.MockSubroutineController"):
         mock_controller._call_method("mock_method", param1="value1")
-    assert any(
-        rec.name == "routix.MockSubroutineController" for rec in caplog.records
+    assert any(rec.name == "routix.MockSubroutineController" for rec in caplog.records)
+
+
+def test_artifact_layout_defaults_to_none(
+    mock_controller: MockSubroutineController,
+):
+    assert mock_controller._artifact_layout is None
+    assert mock_controller._artifact_scenario_name is None
+    assert mock_controller._artifact_instance_name is None
+
+
+def test_set_artifact_layout_stores_layout_and_coords(
+    mock_controller: MockSubroutineController, tmp_path: Path
+):
+    layout = ArtifactLayout(run_root=tmp_path / "RUN", run_id="RUN")
+
+    mock_controller.set_artifact_layout(
+        layout, scenario_name="scA", instance_name="insX"
     )
+
+    assert mock_controller._artifact_layout is layout
+    assert mock_controller._artifact_scenario_name == "scA"
+    assert mock_controller._artifact_instance_name == "insX"
+
+
+def test_set_artifact_layout_requires_keyword_only_coords(
+    mock_controller: MockSubroutineController, tmp_path: Path
+):
+    layout = ArtifactLayout(run_root=tmp_path / "RUN", run_id="RUN")
+
+    with pytest.raises(TypeError):
+        mock_controller.set_artifact_layout(layout, "scA", "insX")  # type: ignore[misc] # ty: ignore[missing-argument, too-many-positional-arguments]
+
+
+def test_set_artifact_layout_does_not_replace_working_dir(
+    mock_controller: MockSubroutineController, tmp_path: Path
+):
+    wd = tmp_path / "wd"
+    mock_controller.set_working_dir(wd)
+    layout = ArtifactLayout(run_root=tmp_path / "RUN", run_id="RUN")
+
+    mock_controller.set_artifact_layout(layout, scenario_name="s", instance_name="i")
+
+    # The two settings are independent: layout binding must not clobber working_dir.
+    assert mock_controller._working_dir_path == wd
+    assert mock_controller._artifact_layout is layout

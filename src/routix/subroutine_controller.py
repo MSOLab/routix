@@ -10,6 +10,7 @@ from warnings import warn
 from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
+from .io import ArtifactLayout
 from .method_context_manager import MethodContextManager
 from .report import SubroutineReportT
 from .stopping_criteria import StoppingCriteriaT
@@ -55,6 +56,12 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
         self._working_dir_path: Path | None = None
         """Path to the working directory where output files are stored."""
+        self._artifact_layout: ArtifactLayout | None = None
+        """Optional artifact layout bound via `set_artifact_layout`."""
+        self._artifact_scenario_name: str | None = None
+        """Scenario coordinate accompanying `_artifact_layout`."""
+        self._artifact_instance_name: str | None = None
+        """Instance coordinate accompanying `_artifact_layout`."""
         self.method_call_counts: dict[str, int] = defaultdict(int)
         """Counts method calls during experiment execution."""
         self._method_context_mgr = MethodContextManager()
@@ -74,6 +81,27 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
         self._working_dir_path = Path(dir_path)
         self._working_dir_path.mkdir(parents=True, exist_ok=True)
+
+    def set_artifact_layout(
+        self,
+        layout: ArtifactLayout,
+        *,
+        scenario_name: str,
+        instance_name: str,
+    ) -> None:
+        """Bind this controller to an `ArtifactLayout` with instance coordinates.
+
+        Stores the layout and the (scenario_name, instance_name) pair so the
+        controller — and algorithms it invokes — can later resolve
+        instance-scope log and artifact paths through the layout instead of
+        rebuilding the path convention locally.
+
+        This is additive: `set_working_dir` remains the canonical sink for
+        the working directory today, and is unaffected by this binding.
+        """
+        self._artifact_layout = layout
+        self._artifact_scenario_name = scenario_name
+        self._artifact_instance_name = instance_name
 
     def get_current_method_name(self) -> str:
         """

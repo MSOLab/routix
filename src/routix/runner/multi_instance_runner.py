@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
+from ..io import ArtifactLayout
 from ..type_defs import ParametersT, RunMode
 from .single_instance_runner import SingleInstanceRunnerT
 
@@ -29,6 +30,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
         logger: logging.Logger | None = None,
+        layout: ArtifactLayout | None = None,
         **kwargs: Any,
     ) -> None:
         self.logger = (
@@ -36,6 +38,8 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             if logger is not None
             else logging.getLogger(f"routix.{self.__class__.__name__}")
         )
+        self.layout = layout
+        """Optional artifact layout, forwarded from a parent scenario runner."""
         self.e_timer = ElapsedTimer()
         """Elapsed timer for multi-instance run."""
 
