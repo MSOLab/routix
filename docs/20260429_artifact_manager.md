@@ -904,7 +904,7 @@ def _validate_scenario_uniqueness(scenarios: list[dict]) -> None:
       - `PrefixLevelFilter(prefix)` — `record.name`이 prefix로 시작하는
         record 중 INFO/DEBUG는 drop, WARNING+는 통과시키는 `logging.Filter`
       - `tests/test_logging.py` — § 7.2 시나리오 7개 + 단위 5개 = 12 테스트
-- [ ] `tests/io/test_artifact_layout.py` — zone routing, subclass register,
+- [x] `tests/io/test_artifact_layout.py` — zone routing, subclass register,
       stamp/restore round-trip, **zone validation** (scope=instance에 zone 누락
       → ValueError / scope=run·scenario에 zone 지정 → ValueError / scenario_dir
       중복 등록 → ValueError)
