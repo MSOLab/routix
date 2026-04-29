@@ -14,17 +14,18 @@ scopes:
 # zone subdirectory mapping. zone applies only to instance scope.
 zones:
   instance:
-    final: ""           # zone="final" → instance dir 그대로
+    final: ""           # zone="final" → instance dir as-is
     progress: "progress"
     report: "report"
 
 # zone validation rule (fail-fast at schema load and register_kind):
-#   - scope=instance: `zone` 필드 필수. {final|progress|report} 중 하나.
-#                     누락 → ValueError.
-#   - scope=run / scenario: `zone` 필드 금지. 들어오면 ValueError.
-# Rationale: zone은 SSOT 보호 contract의 핵심 분류이므로 작성자가 매 entry마다
-# 명시적으로 결정하도록 강제. default를 두면 새 kind가 zone을 빠뜨린 채
-# `final`(가장 보호되어야 할 zone)에 silently 들어가는 사고가 재현될 수 있음.
+#   - scope=instance: `zone` field required. One of {final|progress|report}.
+#                     Missing → ValueError.
+#   - scope=run / scenario: `zone` field forbidden. Present → ValueError.
+# Rationale: zone is a core classification in the SSOT protection contract, so
+# authors must explicitly decide it per entry. A default would allow new kinds
+# to omit zone and silently land in `final` (the most protected zone),
+# reproducing past incidents.
 
 logs:
   - scope: run
