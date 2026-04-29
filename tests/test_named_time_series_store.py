@@ -1,7 +1,7 @@
 import warnings
 from pathlib import Path
 
-from src.routix.metric_time_series import NamedTimeSeriesStore
+from routix.metric_time_series import NamedTimeSeriesStore
 
 
 def test_add_and_retrieve():

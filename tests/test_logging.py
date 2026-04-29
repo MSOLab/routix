@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from src.routix.logging import (
+from routix.logging import (
     PrefixLevelFilter,
     _MANAGED_TAG,
     attach_fh_to_logger,

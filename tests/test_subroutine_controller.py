@@ -4,12 +4,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.routix.constants import SubroutineFlowKeys
-from src.routix.dynamic_data_object import DynamicDataObject
-from src.routix.io import ArtifactLayout
-from src.routix.report.subroutine_report import SubroutineReport
-from src.routix.stopping_criteria import StoppingCriteria
-from src.routix.subroutine_controller import SubroutineController
+from routix.constants import SubroutineFlowKeys
+from routix.dynamic_data_object import DynamicDataObject
+from routix.io import ArtifactLayout
+from routix.report.subroutine_report import SubroutineReport
+from routix.stopping_criteria import StoppingCriteria
+from routix.subroutine_controller import SubroutineController
 
 
 class MockSubroutineController(

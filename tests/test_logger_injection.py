@@ -6,13 +6,13 @@ from typing import Any
 
 import pytest
 
-from src.routix.runner.multi_instance_concurrent_runner import (
+from routix.runner.multi_instance_concurrent_runner import (
     MultiInstanceConcurrentRunner,
 )
-from src.routix.runner.multi_instance_runner import MultiInstanceRunner
-from src.routix.runner.multi_scenario_runner import MultiScenarioRunner
-from src.routix.runner.single_instance_runner import SingleInstanceRunner
-from src.routix.solution_manager import SolutionManager
+from routix.runner.multi_instance_runner import MultiInstanceRunner
+from routix.runner.multi_scenario_runner import MultiScenarioRunner
+from routix.runner.single_instance_runner import SingleInstanceRunner
+from routix.solution_manager import SolutionManager
 
 
 class _DummySingleInstanceRunner(SingleInstanceRunner):
