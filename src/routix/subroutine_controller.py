@@ -141,7 +141,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
 
         if self._working_dir_path is None:
-            raise AttributeError("Working directory path is not set.")
+            raise AttributeError(f"Working directory path is not set (requested: {filename_suffix!r}).")
         filename = self._get_call_context_of_current_method() + filename_suffix
         return self._working_dir_path / filename
 

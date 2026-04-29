@@ -156,9 +156,9 @@ class MetricTimeSeries(Generic[NumericT]):
         """
 
         if "name" not in data or "data" not in data:
-            raise KeyError("The dictionary must contain 'name' and 'data' keys.")
+            raise KeyError(f"The dictionary must contain 'name' and 'data' keys. Missing: {[k for k in ('name', 'data') if k not in data]}")
         if not isinstance(data["data"], dict):
-            raise TypeError("'data' must be a dictionary with timestamp-value pairs.")
+            raise TypeError(f"'data' must be a dictionary with timestamp-value pairs, got {type(data['data']).__name__}")
         name = data["name"]
         src_timestamp_value_map = data["data"]
         timestamp_value_map = {

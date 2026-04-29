@@ -143,7 +143,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         )
         # Resume directory
         if "resume_root" not in self.output_metadata:
-            raise ValueError("Missing 'resume_root' in output_metadata")
+            raise ValueError(f"Missing 'resume_root' in output_metadata. Available keys: {list(self.output_metadata.keys())}")
         resume_dir = Path(self.output_metadata["resume_root"])
 
         missing: dict[str, list[str]] = {}
@@ -212,7 +212,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             flow_resume_idx (int): The index in the subroutine flow from which to resume execution.
         """
         if flow_resume_idx < 0:
-            raise ValueError("flow_resume_idx must be non-negative")
+            raise ValueError(f"flow_resume_idx must be non-negative, got {flow_resume_idx}")
         self.logger.info(f"Setting flow_resume_idx to {flow_resume_idx}")
         self.flow_resume_idx = flow_resume_idx
         for runner in self.runners:

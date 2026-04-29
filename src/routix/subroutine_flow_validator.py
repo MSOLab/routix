@@ -283,9 +283,9 @@ class SubroutineFlowValidator:
                 Raises ValueError on mismatch.
         """
         if not isinstance(resume_flow, list):
-            raise TypeError("resume_flow must be a list of DynamicDataObject")
+            raise TypeError(f"resume_flow must be a list of DynamicDataObject, got {type(resume_flow).__name__}")
         if not isinstance(current_flow, list):
-            raise TypeError("current_flow must be a list of DynamicDataObject")
+            raise TypeError(f"current_flow must be a list of DynamicDataObject, got {type(current_flow).__name__}")
 
         if len(resume_flow) > len(current_flow):
             raise ValueError(
