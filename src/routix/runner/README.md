@@ -117,3 +117,46 @@ def post_run_process(self, run_mode: RunMode):
 - **Maintainability**: The logic for execution and post-processing is cleanly separated.
 - **Extensibility**: New modes can be added easily without refactoring existing `if/else` logic.
 - **Robustness**: `post_run_process` can focus solely on its core responsibility of analysis and reporting, regardless of where the data comes from.
+
+---
+
+## 4. Output Layout: `ArtifactLayout`
+
+All four runner classes accept an optional `layout: ArtifactLayout | None = None` constructor parameter (`routix.io.ArtifactLayout`). When provided, the runner delegates directory and file-path resolution to the layout instead of assembling paths from `working_dir / f"..."` strings.
+
+- **Scope dirs**: `layout.run_dir()`, `layout.scenario_dir(scenario_name)`, `layout.instance_dir(scenario_name, instance_name)` — each created on first access.
+- **Logs**: `layout.log_path(role, scenario_name=..., instance_name=...)` resolves the per-layer log file. Roles: `main`, `multi_scenario_runner`, `multi_instance_runner`, `single_instance_runner`, `subroutine_controller`, `algorithm`.
+- **Artifacts**: `layout.artifact_path(kind, scenario_name=..., instance_name=..., **placeholders)` routes to the registered zone (`final`, `progress`, `report`) under the matching scope. Project-specific kinds are added via yaml overlay or `layout.register_kind(...)`.
+- **POST_PROCESS_ONLY discovery**: `layout.find_artifacts(kind, ...)`, `layout.discover_scenarios()`, `layout.discover_instances(scenario_name)`, and `layout.find_instance_manifests(scenario_name)` let the post-process step locate inputs without re-encoding the layout convention.
+- **Backwards-compatible**: passing `layout=None` keeps the legacy behavior; runners fall back to their own working-dir resolution.
+
+The layout is paired with `init_run_root(...)` (`routix.io.path`), which produces a `(run_root, run_id, e_timer)` triple that the layout consumes.
+
+### Logging integration
+
+For per-instance log lifecycle, the runner pairs cleanly with `routix.logging`:
+
+- `routix.logging.attach_fh_to_logger(logger_name, file_path)` /
+  `detach_fh_from_logger(logger_name)` — attach a DEBUG-level `FileHandler` to a named logger and remove it on exit. The helpers track their handlers via a `_MANAGED_TAG` attribute so a defensive sweep on attach cleans up any stale handlers from prior calls (e.g. an earlier instance whose `try/finally` was bypassed). `propagate` is left untouched.
+- `routix.logging.PrefixLevelFilter(prefix)` — a stateless `logging.Filter` that drops INFO/DEBUG records whose `record.name` starts with `prefix` while letting WARNING+ pass through. Attach once to the parent file handler (e.g. the `SingleInstanceRunner` log file) to shield it from a noisy sub-namespace such as `SubroutineController` while still surfacing failures.
+
+A typical pairing inside `SingleInstanceRunner.run`:
+
+```python
+from routix.logging import attach_fh_to_logger, detach_fh_from_logger
+
+sc_logger_name = f"{sc_logger_prefix}.{instance_name}"
+try:
+    attach_fh_to_logger(
+        sc_logger_name,
+        layout.log_path("subroutine_controller",
+                        scenario_name=scenario_name,
+                        instance_name=instance_name),
+    )
+    self.ctrlr = self.get_controller()
+    self.ctrlr.run()
+finally:
+    detach_fh_from_logger(sc_logger_name)
+```
+
+See `docs/20260429_artifact_manager.md` for the full layout and logging design.
