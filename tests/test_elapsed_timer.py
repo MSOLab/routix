@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 
-from src.routix.elapsed_timer import ElapsedTimer
+from routix.elapsed_timer import ElapsedTimer
 
 
 def test_elapsed_timer_initialization():

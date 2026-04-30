@@ -9,7 +9,7 @@ class SubroutineFlowKeys:
     def parse_step(step_dict: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         method_name_key = SubroutineFlowKeys.METHOD
         if method_name_key not in step_dict:
-            raise ValueError("Method name not found in step data.")
+            raise ValueError(f"Method name '{method_name_key}' not found in step data.")
         method_name = step_dict[method_name_key]
 
         kwargs_dict = (

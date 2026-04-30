@@ -1,0 +1,75 @@
+schema_version: 1
+
+scopes:
+  - name: run
+    parent: null
+    dir_template: "{base_output_dir}/{run_id}"
+  - name: scenario
+    parent: run
+    dir_template: "{run_dir}/{scenario_name}"
+  - name: instance
+    parent: scenario
+    dir_template: "{scenario_dir}/{instance_name}"
+
+# zone subdirectory mapping. zone applies only to instance scope.
+zones:
+  instance:
+    final: ""           # zone="final" → instance dir as-is
+    progress: "progress"
+    report: "report"
+
+# zone validation rule (fail-fast at schema load and register_kind):
+#   - scope=instance: `zone` field required. One of {final|progress|report}.
+#                     Missing → ValueError.
+#   - scope=run / scenario: `zone` field forbidden. Present → ValueError.
+# Rationale: zone is a core classification in the SSOT protection contract, so
+# authors must explicitly decide it per entry. A default would allow new kinds
+# to omit zone and silently land in `final` (the most protected zone),
+# reproducing past incidents.
+
+logs:
+  - scope: run
+    role: main
+    file_template: "{run_id}_main.log"
+  - scope: run
+    role: multi_scenario_runner
+    file_template: "{run_id}_MultiScenarioRunner.log"
+  - scope: scenario
+    role: multi_instance_runner
+    file_template: "{run_id}_MultiInstanceRunner.log"
+  - scope: instance
+    role: single_instance_runner
+    file_template: "{run_id}_SingleInstanceRunner.log"
+  - scope: instance
+    role: subroutine_controller
+    file_template: "{run_id}_SubroutineController.log"
+  - scope: instance
+    role: algorithm
+    file_template: "{run_id}_SubroutineController.log"
+
+artifacts:
+  - scope: instance
+    zone: final
+    kind: instance_result_manifest
+    file_template: "{instance_name}_instance_result.yaml"
+  - scope: instance
+    zone: final
+    kind: solution_json
+    file_template: "{instance_name}_solution.json"
+  - scope: instance
+    zone: final
+    kind: obj_log
+    file_template: "{instance_name}_obj_log.yaml"
+
+  - scope: instance
+    zone: progress
+    kind: step_log
+    file_template: "{instance_name}_{step_idx}-{method}_step_log.yaml"
+
+  - scope: scenario
+    kind: benchmark_log
+    file_template: "{scenario_name}_benchmark.log"
+
+  - scope: run
+    kind: summary_csv
+    file_template: "{run_id}_summary.csv"

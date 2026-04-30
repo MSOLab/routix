@@ -35,11 +35,16 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
     optimization process.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, logger: logging.Logger | None = None) -> None:
         self.history: list[SolutionRecord[SubroutineReportT, SolutionT]] = []
         self.incumbent_solution: SolutionT | None = None
         self.best_obj_value: float | None = None
         self.best_obj_bound: float | None = None
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
 
     @abstractmethod
     def _get_obj_value(self, solution: SolutionT) -> float:
@@ -121,13 +126,13 @@ class SolutionManager(Generic[SubroutineReportT, SolutionT], ABC):
         if self._a_is_better_obj_value(new_obj_value, self.best_obj_value):
             self.incumbent_solution = solution
             self.best_obj_value = new_obj_value
-            logging.info(
+            self.logger.info(
                 f"Incumbent solution updated with objective: {self.best_obj_value}"
             )
             return True
         elif update_if_equal_obj and new_obj_value == self.best_obj_value:
             self.incumbent_solution = solution
-            logging.info(
+            self.logger.info(
                 f"Incumbent solution updated (equal objective): {self.best_obj_value}"
             )
             return True

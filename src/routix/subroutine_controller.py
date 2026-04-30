@@ -10,6 +10,7 @@ from warnings import warn
 from .constants import SubroutineFlowKeys
 from .dynamic_data_object import DynamicDataObject
 from .elapsed_timer import ElapsedTimer
+from .io import ArtifactLayout
 from .method_context_manager import MethodContextManager
 from .report import SubroutineReportT
 from .stopping_criteria import StoppingCriteriaT
@@ -26,7 +27,14 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         subroutine_flow: Sequence[DynamicDataObject] | DynamicDataObject,
         stopping_criteria: StoppingCriteriaT,
         start_dt: datetime | None = None,
+        logger: logging.Logger | None = None,
     ):
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
+
         # Set the timer
         e_timer = ElapsedTimer()
         if start_dt is not None:
@@ -48,6 +56,12 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
         self._working_dir_path: Path | None = None
         """Path to the working directory where output files are stored."""
+        self._artifact_layout: ArtifactLayout | None = None
+        """Optional artifact layout bound via `set_artifact_layout`."""
+        self._artifact_scenario_name: str | None = None
+        """Scenario coordinate accompanying `_artifact_layout`."""
+        self._artifact_instance_name: str | None = None
+        """Instance coordinate accompanying `_artifact_layout`."""
         self.method_call_counts: dict[str, int] = defaultdict(int)
         """Counts method calls during experiment execution."""
         self._method_context_mgr = MethodContextManager()
@@ -67,6 +81,27 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
         self._working_dir_path = Path(dir_path)
         self._working_dir_path.mkdir(parents=True, exist_ok=True)
+
+    def set_artifact_layout(
+        self,
+        layout: ArtifactLayout,
+        *,
+        scenario_name: str,
+        instance_name: str,
+    ) -> None:
+        """Bind this controller to an `ArtifactLayout` with instance coordinates.
+
+        Stores the layout and the (scenario_name, instance_name) pair so the
+        controller — and algorithms it invokes — can later resolve
+        instance-scope log and artifact paths through the layout instead of
+        rebuilding the path convention locally.
+
+        This is additive: `set_working_dir` remains the canonical sink for
+        the working directory today, and is unaffected by this binding.
+        """
+        self._artifact_layout = layout
+        self._artifact_scenario_name = scenario_name
+        self._artifact_instance_name = instance_name
 
     def get_current_method_name(self) -> str:
         """
@@ -106,7 +141,7 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
         """
 
         if self._working_dir_path is None:
-            raise AttributeError("Working directory path is not set.")
+            raise AttributeError(f"Working directory path is not set (requested: {filename_suffix!r}).")
         filename = self._get_call_context_of_current_method() + filename_suffix
         return self._working_dir_path / filename
 
@@ -180,13 +215,13 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
             elapsed_sec = end_sec - start_sec
             log_entry["elapsed_sec"] = elapsed_sec
             log_entry["error"] = str(e)
-            logging.error(str(log_entry))
+            self.logger.error(str(log_entry))
             raise e
 
         end_sec = self.timer.elapsed_sec
         elapsed_sec = end_sec - start_sec
         log_entry["elapsed_sec"] = elapsed_sec
-        logging.info(str(log_entry))
+        self.logger.info(str(log_entry))
 
         # Pop the method name from the context stack
         self._method_context_mgr.pop()
@@ -256,11 +291,11 @@ class SubroutineController(Generic[StoppingCriteriaT, SubroutineReportT], ABC):
 
         for i in range(n_repeats):
             if self.is_stopping_condition():
-                logging.info(
+                self.logger.info(
                     f"[Repeat] Stopping condition met at iteration {i + 1}/{n_repeats}."
                 )
                 break
-            logging.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
+            self.logger.info(f"[Repeat] Starting repeat {i + 1}/{n_repeats}")
 
             with self.temporarily_extended_context(subroutine_name):
                 self._run_flow(DynamicDataObject.from_obj(routine_data))

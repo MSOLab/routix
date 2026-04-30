@@ -1,8 +1,10 @@
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
+from ..io import ArtifactLayout
 from ..subroutine_controller import SubroutineControllerT
 from ..type_defs import ParametersT, RunMode
 
@@ -27,7 +29,17 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         output_dir: Path,
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
+        logger: logging.Logger | None = None,
+        layout: ArtifactLayout | None = None,
     ):
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
+        self.layout = layout
+        """Optional artifact layout. When set, runners may delegate path
+        decisions to it; when None, legacy `_init_working_dir` behavior holds."""
         self.e_timer = ElapsedTimer()
         """Elapsed timer for single-instance run."""
         if dt := output_metadata.get("start_dt"):

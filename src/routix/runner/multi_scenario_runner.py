@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
+from ..io import ArtifactLayout
 from ..type_defs import ParametersT, RunMode
 from .multi_instance_runner import MultiInstanceRunnerT
 from .single_instance_runner import SingleInstanceRunnerT
@@ -29,8 +30,19 @@ class MultiScenarioRunner(
         output_dir: Path,
         base_output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
+        logger: logging.Logger | None = None,
+        layout: ArtifactLayout | None = None,
         **kwargs: Any,
     ) -> None:
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
+        self.layout = layout
+        """Optional artifact layout. Construction in `_init_multi_instance_runners`
+        does not yet forward this to children — that wiring is a follow-up step."""
+
         # Set up the elapsed timer
         self.e_timer = ElapsedTimer()
 
@@ -80,7 +92,7 @@ class MultiScenarioRunner(
             stopping_criteria = scenario_config.get("stopping_criteria")
 
             if subroutine_flow is None or stopping_criteria is None:
-                logging.warning(
+                self.logger.warning(
                     f"Skipping scenario {i + 1} due to missing 'subroutine_flow' or 'stopping_criteria'."
                 )
                 continue
@@ -119,17 +131,17 @@ class MultiScenarioRunner(
         self.results.clear()
 
         for i, multi_instance_runner in enumerate(self.runners):
-            logging.info(f"--- Starting Scenario {i + 1}/{runner_cnt} ---")
-            logging.info(f"Scenario Config: {self.scenario_configs[i]}")
+            self.logger.info(f"--- Starting Scenario {i + 1}/{runner_cnt} ---")
+            self.logger.info(f"Scenario Config: {self.scenario_configs[i]}")
 
             try:
                 result = multi_instance_runner.run()
                 self.results.append(result)
             except Exception as e:
-                logging.error(f"Error in scenario {i + 1}: {e}", exc_info=True)
+                self.logger.error(f"Error in scenario {i + 1}: {e}", exc_info=True)
                 self.results.append(None)
 
-            logging.info(f"--- Finished Scenario {i + 1}/{runner_cnt} ---")
+            self.logger.info(f"--- Finished Scenario {i + 1}/{runner_cnt} ---")
 
         return self.post_run_process()
 

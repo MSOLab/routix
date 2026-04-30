@@ -1,8 +1,16 @@
+import dataclasses
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 from routix.elapsed_timer import ElapsedTimer
-from routix.io.path import extract_prefix_from_filename, init_timestamped_working_dir
+from routix.io.path import (
+    RunRoot,
+    extract_prefix_from_filename,
+    init_run_root,
+    init_timestamped_working_dir,
+)
 
 
 def test_init_timestamped_working_dir_creates_directory(tmp_path: Path):
@@ -49,3 +57,31 @@ def test_extract_prefix_from_filename_returns_none_for_non_matching_filename():
 def test_extract_prefix_from_filename_is_not_full_match():
     result = extract_prefix_from_filename("{}_obj_log.yaml", "0_obj_log.yaml.bak")
     assert result == "0"
+
+
+def test_init_run_root_creates_dir_and_exposes_run_id(tmp_path: Path):
+    base = tmp_path / "outputs"
+    timer = ElapsedTimer()
+    timer.set_start_time(datetime(2026, 1, 2, 3, 4, 5, 678901))
+    expected_run_id = "20260102T030405_678901"
+
+    rr = init_run_root(base, e_timer=timer)
+
+    assert isinstance(rr, RunRoot)
+    assert rr.run_id == expected_run_id
+    assert rr.path == base / expected_run_id
+    assert rr.path.is_dir()
+
+
+def test_init_run_root_creates_default_timer_when_none(tmp_path: Path):
+    rr = init_run_root(tmp_path)
+
+    assert rr.path.is_dir()
+    # run_id always equals the directory leaf
+    assert rr.run_id == rr.path.name
+
+
+def test_run_root_is_frozen():
+    rr = RunRoot(path=Path("/tmp"), run_id="x")
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        rr.run_id = "y"  # type: ignore[misc]  # ty: ignore[invalid-assignment]

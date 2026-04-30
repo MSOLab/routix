@@ -1,10 +1,10 @@
 import logging
-import traceback
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Sequence, TypeVar
 
 from ..elapsed_timer import ElapsedTimer
+from ..io import ArtifactLayout
 from ..type_defs import ParametersT, RunMode
 from .single_instance_runner import SingleInstanceRunnerT
 
@@ -29,8 +29,17 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         output_dir: Path,
         output_metadata: dict[str, Any],
         mode: RunMode = RunMode.FULL_RUN,
+        logger: logging.Logger | None = None,
+        layout: ArtifactLayout | None = None,
         **kwargs: Any,
     ) -> None:
+        self.logger = (
+            logger
+            if logger is not None
+            else logging.getLogger(f"routix.{self.__class__.__name__}")
+        )
+        self.layout = layout
+        """Optional artifact layout, forwarded from a parent scenario runner."""
         self.e_timer = ElapsedTimer()
         """Elapsed timer for multi-instance run."""
 
@@ -64,7 +73,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             try:
                 self._load_resume_data()
             except Exception as e:
-                logging.exception(f"Loading resume data failed: {e}")
+                self.logger.exception(f"Loading resume data failed: {e}")
 
     def _set_start_dt(self) -> None:
         """
@@ -86,6 +95,15 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         self.working_dir = self.output_dir
         self.working_dir.mkdir(parents=True, exist_ok=True)
 
+    def _make_runner_logger(self, instance: ParametersT) -> logging.Logger | None:
+        """Hook for subclasses to provide per-instance loggers.
+
+        Default ``None`` lets the single-instance runner fall back to its own
+        ``getLogger(f"routix.{class_name}")``. Override to attach instance
+        runners to a project-specific logger tree.
+        """
+        return None
+
     def _init_single_instance_runners(self) -> None:
         """Initializes the single instance runners for each instance."""
         self.runners.clear()
@@ -101,6 +119,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
                 output_dir=self.output_dir,
                 output_metadata=self.output_metadata,
                 mode=self.mode,
+                logger=self._make_runner_logger(instance),
             )
             self.runners.append(runner)
 
@@ -124,7 +143,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
         )
         # Resume directory
         if "resume_root" not in self.output_metadata:
-            raise ValueError("Missing 'resume_root' in output_metadata")
+            raise ValueError(f"Missing 'resume_root' in output_metadata. Available keys: {list(self.output_metadata.keys())}")
         resume_dir = Path(self.output_metadata["resume_root"])
 
         missing: dict[str, list[str]] = {}
@@ -193,8 +212,8 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             flow_resume_idx (int): The index in the subroutine flow from which to resume execution.
         """
         if flow_resume_idx < 0:
-            raise ValueError("flow_resume_idx must be non-negative")
-        logging.info(f"Setting flow_resume_idx to {flow_resume_idx}")
+            raise ValueError(f"flow_resume_idx must be non-negative, got {flow_resume_idx}")
+        self.logger.info(f"Setting flow_resume_idx to {flow_resume_idx}")
         self.flow_resume_idx = flow_resume_idx
         for runner in self.runners:
             runner.flow_resume_idx = flow_resume_idx
@@ -204,8 +223,7 @@ class MultiInstanceRunner(Generic[ParametersT, SingleInstanceRunnerT], ABC):
             try:
                 result = runner.run()
             except Exception as e:
-                logging.error(f"Error in instance {runner.ins_name}: {e}")
-                traceback.print_exc()
+                self.logger.exception(f"Error in instance {runner.ins_name}: {e}")
                 result = None
             self.results.append(result)
 

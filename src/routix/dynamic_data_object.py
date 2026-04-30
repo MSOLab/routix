@@ -83,7 +83,7 @@ class DynamicDataObject:
         if isinstance(obj, (str, int, float, bool, type(None))):
             return obj  # Return basic types as-is
         elif isinstance(obj, bytes):
-            raise TypeError("bytes type is not supported. Please decode or convert it.")
+            raise TypeError(f"bytes type is not supported: {obj!r}. Please decode or convert it.")
         elif isinstance(obj, list):
             return cls.from_sequence(obj)
         elif isinstance(obj, dict):

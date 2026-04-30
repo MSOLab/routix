@@ -1,8 +1,10 @@
+import logging
+
 import pytest
 
-from src.routix.constants import SubroutineFlowKeys
-from src.routix.dynamic_data_object import DynamicDataObject
-from src.routix.subroutine_flow_validator import (
+from routix.constants import SubroutineFlowKeys
+from routix.dynamic_data_object import DynamicDataObject
+from routix.subroutine_flow_validator import (
     SubroutineFlowValidator,
     is_static_or_instance_method,
     get_list_of_missing_required_arguments,
@@ -40,16 +42,26 @@ def validator(mock_controller_class):
     return SubroutineFlowValidator(mock_controller_class)
 
 
+def test_default_logger_uses_hierarchical_name(validator: SubroutineFlowValidator):
+    assert validator.logger.name == "routix.SubroutineFlowValidator"
+
+
+def test_injected_logger_is_used(mock_controller_class):
+    custom = logging.getLogger("test.custom.validator")
+    validator = SubroutineFlowValidator(mock_controller_class, logger=custom)
+    assert validator.logger is custom
+
+
 def test_validate_valid_flow(validator: SubroutineFlowValidator):
-    # 유효한 DynamicDataObject 생성
+    # Create a valid DynamicDataObject
     valid_flow = MockDynamicDataObject({SubroutineFlowKeys.METHOD: "some_method"})
 
-    # 예외가 발생하지 않는지 확인
+    # Verify that no exception is raised
     assert validator.validate(valid_flow)
 
 
 def test_validate_invalid_flow_missing_method_name(validator: SubroutineFlowValidator):
-    # "method" 키가 없는 DynamicDataObject 생성
+    # Create a DynamicDataObject without the "method" key
     invalid_flow = MockDynamicDataObject({})
 
     with pytest.raises(ValueError, match=f"Missing {SubroutineFlowKeys.METHOD}"):
@@ -57,7 +69,7 @@ def test_validate_invalid_flow_missing_method_name(validator: SubroutineFlowVali
 
 
 def test_validate_invalid_flow_nonexistent_method(validator: SubroutineFlowValidator):
-    # 존재하지 않는 메서드를 가진 DynamicDataObject 생성
+    # Create a DynamicDataObject with a nonexistent method
     invalid_flow = MockDynamicDataObject(
         {SubroutineFlowKeys.METHOD: "nonexistent_method"}
     )

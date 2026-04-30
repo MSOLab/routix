@@ -1,7 +1,7 @@
 import pytest
 
-from src.routix.dynamic_data_object import DynamicDataObject
-from src.routix.subroutine_flow_validator import (
+from routix.dynamic_data_object import DynamicDataObject
+from routix.subroutine_flow_validator import (
     SubroutineFlowValidator,
 )
 
