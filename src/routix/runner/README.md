@@ -130,7 +130,7 @@ All four runner classes accept an optional `layout: ArtifactLayout | None = None
 - **POST_PROCESS_ONLY discovery**: `layout.find_artifacts(kind, ...)`, `layout.discover_scenarios()`, `layout.discover_instances(scenario_name)`, and `layout.find_instance_manifests(scenario_name)` let the post-process step locate inputs without re-encoding the layout convention.
 - **Backwards-compatible**: passing `layout=None` keeps the legacy behavior; runners fall back to their own working-dir resolution.
 
-The layout is paired with `init_run_root(...)` (`routix.io.path`), which produces a `(run_root, run_id, e_timer)` triple that the layout consumes.
+The layout is paired with `init_run_root(...)` (`routix.io.path`), which returns a `RunRoot(path, run_id)` that the layout consumes.
 
 ### Logging integration
 
