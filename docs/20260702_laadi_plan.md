@@ -2,7 +2,9 @@
 
 작성일: 2026-07-02
 갱신: 2026-07-03 — frame(액자) 모델·analyzer 1급 시민 추가 (§1.2, §5.9–5.10)
-상태: 초안 — laadi 저장소 생성 전 참조 문서 (이 저장소에는 commit하지 않음)
+갱신: 2026-07-06 — §10 미해결질문 결정 반영 (§0.1; 8번만 잔존), routix 검증 버그
+수정 완료 (§3.1, §10-6)
+상태: 초안 — laadi 저장소 생성 전 참조 문서 (routix 저장소 docs/에 참조용으로 커밋됨)
 
 > **Laadi** = **L**ibrary for **A**lgorithm **A**nalysis & **D**esign **I**nfrastructure.
 > routix의 의도를 계승하고 aladia의 설계 자산을 참조하되, **greenfield로 재작성**하는
@@ -28,6 +30,21 @@
 | v1 검증 | **toy 예제를 LLM이 처음부터 구축**하는 시나리오로 acceptance, `ffc_dw_wET_2026` 마이그레이션은 v1.x |
 | 이름 | `laadi` — PyPI 미등록 확인 (2026-07-02 기준 404; `aladia`도 실제로는 미공개였음) |
 | routix | 그대로 유지. laadi는 drop-in 대체가 아님 |
+
+### 0.1 추가 확정 (2026-07-06 — §10 답변)
+
+| 항목 | 결정 |
+| --- | --- |
+| subalgorithm 실행 모델 (§5.3, §10-1) | **context-callable** 확정. 판단 기준 = "Sonnet 4.5급 LLM이 작성하기 좋은 형태" — 근거는 §10-1. 사용감 스파이크 불요 |
+| stopping criteria (§10-2) | per-instance timelimit **표현식(`"5nc"`류)을 표준 필드로 — 필수 기능** |
+| 분석 v1 절단선 (§10-3) | 제안대로 확정: core = aggregate_row+statistics+analyzer 실행기 / `[report]` extra = RPDf·차트 / gantt류 도메인 렌더러 = 도메인 모듈 소관 |
+| 이름·PyPI (§10-4) | `laadi` 유지, **PyPI 선점하지 않음** — 공개 시점에 선점돼 있으면 개명 |
+| 문서 언어 (§10-5) | **전부 영어** (한국어 질의에는 LLM이 한국어로 응답하므로 사용성 손실 없음) |
+| routix 병행 유지보수 (§10-6) | §3.1 검증 버그 3건 routix에서 수정 **완료** (2026-07-06) |
+| frame 크기 정책 (§10-7) | 제안대로: v1 무제한 + 크기 관측(frame_record에 bytes), 상한/샘플링/압축은 데이터 축적 후 |
+| frame ↔ (2a) 접점 (§10-8) | **미해결 유지** — 유일한 잔여 질문 |
+
+별도 결정 대기: ccdeJava 검토(`20260703_laadi_ccdeJava_review.md`)의 제안 P-1~P-8.
 
 ---
 
@@ -181,6 +198,10 @@ routix 호스트들의 AGENTS.md에만 존재하던 관례를 **기계가 강제
 | 문서 drift: 삭제된 API(SubroutineReportRecorder)·미구현 API(discover_*)를 README가 안내 | README, runner/README.md | 문서는 코드에서 생성하거나 contract 테스트로 검증 |
 | 암묵 계약 무더기: `instance.name`, `output_metadata`/`shared_param_dict` 문자열 키, camelCase CSV 컬럼 | 전반 | 전부 스키마化 |
 
+2026-07-06: 위 중 3건 — 예외 삼킴, concurrent 격리 부재, pyyaml 미선언 — 은 routix에서
+직접 수정 완료 (§10-6, `tests/test_runner_failure.py`·`tests/test_packaging.py` 동반).
+layout 미배선·문서 drift·암묵 계약은 설계 수준 문제라 laadi가 해소.
+
 ### 3.2 aladia에서 ("v1 완성" 주장 대비 실제 갭)
 
 - **(a)→(b) 미배선**: `run_config` 스키마는 있으나 그것을 로드해 러너를 구동하는
@@ -275,7 +296,7 @@ aladia의 array-of-records JSONL을 계승하되 두 가지를 더한다:
 
 ### 5.3 subalgorithm 실행 모델 — step 템플릿과 god-controller의 동시 해소
 
-방향 (권장, 스파이크로 확정 — §10):
+방향 (**확정** 2026-07-06 — §10-1, 기준: LLM 사용성):
 
 - subalgorithm = **`SubalgorithmContext`를 받아 `StepOutcome`을 반환하는 callable**
   (Protocol). controller 메서드일 필요가 없다. `subalgorithm_spec.code_ref`가 이
@@ -603,31 +624,59 @@ laadi/
 
 ---
 
-## 10. 미해결 질문 (다음 세션에서 결정)
+## 10. 미해결 질문 — 결정 (2026-07-06)
 
-1. **subalgorithm 실행 모델의 최종형** (§5.3): context-callable 방식 권장이나,
-   routix식 controller-subclass와의 사용감 비교 스파이크 후 확정.
-   상태 공유(호스트들이 controller 인스턴스 변수로 하던 것)를 context의 state
-   슬롯으로 옮길 때의 인체공학이 관건.
-2. **stopping criteria 스키마 범위**: per-instance timelimit 표현식(`"5nc"`,
-   `timelimit_n_by_m_multiplier`)이 세 저장소 공통 실수요 — 표현식 문자열을 표준
-   필드로 넣을지, 도메인 확장으로 둘지.
-3. **분석 v1 산출물의 선**: aggregate_row + scenario statistics + analyzer
-   실행기까지 core, RPDf/차트·렌더러(gantt 등)는 `[report]` extra — 이 절단선이
-   맞는지. 렌더러 중 도메인 무관한 것(trajectory 라인차트)만 laadi가 들고, gantt류
-   도메인 렌더러는 도메인 모듈 소관으로 두는 안.
-4. **`laadi` 이름·backronym 확정** 및 PyPI 선점 시점 (빈 0.0.1을 먼저 올릴지).
-5. **문서 언어 정책**: aladia는 요구사항 문서(한국어)와 계약·README(영어)가
-   갈렸음. laadi는 무엇을 한국어로, 무엇을 영어로 쓸지 (LLM 소비 문서는 영어 권장).
-6. **routix 병행 유지보수 범위**: §3.1의 검증된 버그(예외 삼킴, pyyaml 미선언)를
-   routix에도 고칠지, laadi로의 이행에 집중할지.
-7. **frame 방출물의 크기 정책** (§5.9): phase snapshot JSON이 큰 인스턴스×깊은
-   트리에서 수백 MB가 될 수 있음. v1은 무제한+크기 관측(frame_record에 bytes 기록)
-   으로 가고, 상한/샘플링/압축은 데이터가 쌓인 뒤 결정하는 안.
-8. **frame과 (2a) 알고리즘 계약의 접점**: routix-free 알고리즘층(AlgSpec→AlgRecord)
-   내부의 단계도 frame으로 잡으려면 stop_predicate처럼 frame 핸들(또는 방출 콜백)을
-   AlgSpec에 주입해야 함 — 알고리즘층의 framework-free 원칙(ffc_dw_wET
-   algorithm-principles.md 18규칙)과의 균형을 §10-1 스파이크에서 함께 결정.
+8번을 제외하고 전부 결정됨 (요약: §0.1). 원 질문과 결정 근거를 함께 기록한다.
+
+1. **subalgorithm 실행 모델의 최종형** (§5.3): **context-callable로 확정.**
+   판단 기준(사용자 지정) = "Sonnet 4.5급 LLM이 작성하기 좋은 형태". 두 안의 비교:
+   - **작업이 새 파일+새 함수로 국소화**: subclass 방식은 이미 존재하는 (커질수록
+     거대한) 클래스 파일을 열어 메서드를 삽입해야 함 — 잘못된 위치 삽입, 기존 메서드
+     훼손, 대형 파일의 컨텍스트 부담 등 중급 LLM의 대표 실수 클래스가 그대로 노출.
+     callable 방식은 `laadi add subalgorithm`이 새 파일을 생성하는 것으로 끝나
+     idempotent하고 충돌이 없음.
+   - **완료 판정의 기계 검증**: Protocol 시그니처 적합성은 validator가 검사 가능
+     (P4 — "정해진 모양을 정해진 자리에"). subclass의 올바름(super 호출, self 상태
+     초기화 순서, 메서드 간 암묵 호출 규약)은 정적 검증이 어려워 S5 단계의 완료
+     판정(§6.1)이 약해짐.
+   - **암묵 상태 제거**: controller 인스턴스 변수는 어디서 초기화되고 누가 읽는지
+     클래스 전체를 읽어야 알 수 있음. context의 명시적 state 슬롯은 국소적으로
+     추적 가능 — 코드베이스 전체를 읽지 않고 작업하는 LLM 시나리오에서 결정적.
+   - **테스트 용이**: callable은 context fake 하나로 단위 테스트. subclass는
+     controller 기동이 필요해 LLM이 테스트를 생략하거나 통합 테스트로 도피하기 쉬움.
+   - **(2a) 언어 교체성과의 정합**: "불투명 code_ref가 가리키는 callable"은 v2의
+     비-Python executor와 자연스럽게 정합. bound method는 Python 클래스 의미론을
+     경계에 새김.
+   - subclass의 장점(상태 공유 인체공학, IDE 탐색성)은 사람 개발자용 이점이라 이번
+     판단 기준에서는 비중이 낮음. 상태 공유는 context state 슬롯이 흡수.
+   → §5.3의 스파이크 단서 해제. 잔여 스파이크 필요성은 8번에만 남음.
+2. **stopping criteria 스키마 범위**: per-instance timelimit **표현식은 표준 필드로
+   필수 채택** (`"5nc"`, `timelimit_n_by_m_multiplier`류). 표현식 문법과 평가 규칙의
+   구체 설계는 laadi 저장소에서.
+3. **분석 v1 산출물의 선**: 제안 절단선 그대로 확정 — core = aggregate_row +
+   scenario statistics + analyzer 실행기 / `[report]` extra = RPDf·차트 / 렌더러는
+   도메인 무관(trajectory 라인차트)만 laadi, gantt류는 도메인 모듈 소관.
+4. **이름·PyPI**: `laadi` 유지. **PyPI 선점은 하지 않음** — 공개 시점에 이름이
+   선점되어 있으면 그때 개명.
+5. **문서 언어 정책**: **전부 영어** (계약, README, AGENTS.md, 설계 문서 포함).
+   한국어로 질문하면 LLM이 한국어로 답하므로 원문이 영어여도 사용성 손실 없음.
+6. **routix 병행 유지보수 범위**: 검증된 버그를 routix에서 수정 — **완료
+   (2026-07-06)**: ① `SingleInstanceRunner.run`의 `finally: return` 예외 삼킴 제거
+   (예외 전파, 실패 시 post_run_process 미호출; 실패 기록용 **`on_run_error` 훅 신설**
+   — 기본 no-op, 훅 자체의 예외는 로그만 남기고 원 예외를 가리지 않음 — laadi §5.4
+   실패 계약의 routix 축소판. sequential MultiInstanceRunner의
+   기존 per-instance 격리가 이 수정으로 비로소 작동), ② `MultiInstanceConcurrentRunner`
+   에 per-instance 예외 격리(실패 instance는 로그+None, pool·시나리오 유지),
+   ③ pyyaml runtime 의존성 선언. 테스트 `tests/test_runner_failure.py`,
+   `tests/test_packaging.py` 동반. layout 미배선·문서 drift는 laadi에서 해소.
+7. **frame 방출물의 크기 정책** (§5.9): 제안대로 확정 — v1은 무제한 + 크기 관측
+   (frame_record에 bytes 기록), 상한/샘플링/압축은 데이터가 쌓인 뒤 결정.
+8. **frame과 (2a) 알고리즘 계약의 접점** — **미해결 (유일한 잔여 질문)**:
+   routix-free 알고리즘층(AlgSpec→AlgRecord) 내부의 단계도 frame으로 잡으려면
+   stop_predicate처럼 frame 핸들(또는 방출 콜백)을 AlgSpec에 주입해야 함 —
+   알고리즘층의 framework-free 원칙(ffc_dw_wET algorithm-principles.md 18규칙)과의
+   균형. 1번이 context-callable로 확정되어 질문은 "context가 제공하는 frame 기능을
+   (2a) 심층까지 어떻게 전달하나"로 좁혀짐 — laadi 저장소에서 스파이크로 결정.
 
 ---
 
