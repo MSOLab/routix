@@ -95,14 +95,37 @@ class SingleInstanceRunner(Generic[ParametersT, SubroutineControllerT], ABC):
         - This method initializes the controller and runs it if the mode is FULL_RUN.
         - If the mode is POST_PROCESS_ONLY, it skips the controller run and directly
         calls the post_run_process method.
+        - On a controller exception, the on_run_error hook is called, then the
+        exception propagates to the caller and post_run_process is skipped;
+        multi-instance runners isolate the failure per instance.
         """
         try:
             if self.mode == RunMode.FULL_RUN:
                 self.ctrlr = self.get_controller()
                 self.ctrlr.set_working_dir(self.working_dir)
                 self.ctrlr.run()
-        finally:
-            return self.post_run_process()
+        except Exception as e:
+            try:
+                self.on_run_error(e)
+            except Exception:
+                self.logger.exception(
+                    f"on_run_error hook failed for instance {self.ins_name}"
+                )
+            raise
+        return self.post_run_process()
+
+    def on_run_error(self, exc: Exception) -> None:
+        """
+        Hook called when the controller run raises, right before the exception
+        propagates to the caller. Default: no-op.
+
+        Override this to record the failure (e.g. an error summary row or
+        partial results). post_run_process is not called on the failure path;
+        it assumes a successfully completed run.
+
+        Args:
+            exc (Exception): The exception raised by the controller run.
+        """
 
     @abstractmethod
     def get_controller(self) -> SubroutineControllerT:

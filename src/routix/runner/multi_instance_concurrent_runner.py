@@ -98,6 +98,12 @@ class MultiInstanceConcurrentRunner(
             # Submit the run method of each pre-created runner instance
             futures = {executor.submit(runner.run): runner for runner in self.runners}
             for future in concurrent.futures.as_completed(futures):
-                self.results.append(future.result())
+                runner = futures[future]
+                try:
+                    result = future.result()
+                except Exception as e:
+                    self.logger.exception(f"Error in instance {runner.ins_name}: {e}")
+                    result = None
+                self.results.append(result)
 
         return self.post_run_process()
