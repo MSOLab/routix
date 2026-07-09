@@ -1,7 +1,7 @@
 # ccdeJava 검토 — laadi 계획 대조
 
 작성일: 2026-07-03
-상태: 조사 완료 — `docs/20260702_laadi_plan.md`의 보조 문서 (계획 반영 제안 포함, §10 미해결질문에는 답하지 않음)
+상태: 조사 완료 — `docs/laadi/20260702_laadi_plan.md`의 보조 문서 (계획 반영 제안 포함, §10 미해결질문에는 답하지 않음)
 
 대상: `/home/hjt/code/ccdeJava` — POSCO SCM cast 편성(연주 편성) 문제. Java+CPLEX,
 Maven 멀티모듈 + 별도 uv 프로젝트 `python_scripts/`.
