@@ -17,6 +17,8 @@
 - **ccdeJava 검토**: `20260703_laadi_ccdeJava_review.md` — 제안 P-1~P-8은
   **사용자 결정 대기** (아래 참조).
 - **의존성·CPU 예산 메모**: `20260707_laadi_deps_and_cpu_budget.md` (아래 참조).
+- **gbrain·신규 repo 구상 검토**: `20260710_gbrain_new_repo_opinion.md` —
+  보정 1·2·3 동의(2026-07-10), **이름 최종 선정·착수 시점 잔여** (아래 참조).
 
 ## 존재 이유 (Why)
 
@@ -73,6 +75,19 @@ graceful shutdown(cooperative stop→status: interrupted, 2회째 즉시 종료;
 매트릭스에 행 추가) ⑤ solution 없어도 기록은 남김 ⑥ checkpoint inventory analyzer
 동봉. **기록 측은 v1 포함, 복원(RESUME)은 v1.x 유지** — checkpoint 모양이 resume
 계약의 예약. §2.5·§8·§9도 연동 수정.
+
+### 2026-07-10 신규 repo 구상 (사용자 답변)
+
+- `20260710_gbrain_new_repo_opinion.md`의 **보정 1·2·3 모두 동의**: ① gbrain은
+  SSOT(git markdown) 위 인덱스·합성 레이어로만, ② 요구사항 "선수집" = 기존 자산
+  이관의 타임박스로 한정, ③ N runners × 1 Python analyzer — Python 단일 패키지
+  프로토타입, 내부 seam은 "파일 재읽기"로 강제.
+- **이름 기준 변경**: 원래 의중은 aladin(한국인에게 익숙 + 세계적으로 유명)이었으나
+  aladdin·aladin 모두 PyPI 선점. 새 기준 = **한국인에게 익숙한 발음/철자 + 세계적
+  유명함** (두 조건 모두 필수). 라틴/그리스 어원 후보(exagium 등)는 이 기준으로
+  superseded. 후보 재생성은 sonnet 서브에이전트 위임 → **완료**: 가용(PyPI 미등록)
+  19개 확보, 숏리스트 **sindbad·daedalus·gordius** + 차순위·선점 목록은 20260710
+  문서 §4에 기록(선점 목록 재확인 불요). 최종 선정은 사용자 몫.
 
 ## routix 병행 수정과 호스트 영향
 
@@ -149,10 +164,27 @@ laadi RESUME의 두 번째 용례. 참고: 그 커밋의 계획 문서가 말하
 cache)·7(라운드트립+pickle 테스트)은 계획서 미기재 — laadi 저장소 구현 시 이 문서를
 참조.
 
+### gbrain 조사 + "요구사항 우선 신규 repo" 구상 검토 (2026-07-10) — **보정 동의로 종결**
+
+사용자 제안(요구사항을 gbrain 중심 신규 repo에 먼저 수집 → 자유 언어 구현, spec
+repo 분리, 새 이름)을 opus 서브에이전트의 gbrain 실사와 함께 검토 →
+`20260710_gbrain_new_repo_opinion.md`. 요지: **찬성 + 보정 3건** — ① gbrain은
+SSOT(git markdown)의 인덱스·합성 레이어로만(외부 API 데이터 경로 점검 필수),
+② "다 먼저 수집" = 기존 docs/laadi 자산 이관의 타임박스로 한정(waterfall 금지),
+③ 매트릭스는 N×2가 아니라 **N runners × 1 Python analyzer**(경계=파일 계약이므로)
+— Python 단일 패키지 프로토타입이 정답이되 내부 seam을 "파일 재읽기"로 강제.
+spec repo는 스키마+golden fixtures+conformance 실행기 필수(산문만이면 aladia 재판).
+laadi 단일 repo 계획은 superseded되나 계획서 내용물은 spec repo의 씨앗으로 전부 이관.
+
+→ 2026-07-10 당일 사용자 답변: 보정 1·2·3 전부 동의 (타임라인 참조). 검토 시점의
+1차 이름 후보(exagium 계열)는 이름 기준 변경으로 superseded — 현행 숏리스트는
+20260710 문서 §4(sindbad·daedalus·gordius), 1차 후보 기록은 같은 문서 부록 B.
+
 ## 잔여 결정·작업 규칙
 
 - **잔여 결정**: §10-8(frame↔(2a) 접점 — laadi 저장소에서 스파이크) + ccdeJava
-  P-1~P-8.
+  P-1~P-8 + **이름 최종 선정(새 기준 후보 중) + 신규 repo 생성 착수 시점(사용자
+  지시 대기)**.
 - laadi 저장소 생성 시 계획서를 첫 입력으로. **아직 laadi 디렉토리 생성은 하지 말
   것** (사용자 지시 대기).
 - laadi 관련 새 결정/분석은 이 파일에 기록 (에이전트 메모리 금지). 커밋은 사용자 몫.
