@@ -1,6 +1,8 @@
 # Laadi 보강 메모 — 의존성 정책 · CPU core 예산 사전 검사
 
 작성일: 2026-07-07
+갱신: 2026-07-11 — composite subalgorithm(계획서 §5.3.1) 하 예산이 flat 리스트가
+아니라 step 트리 재귀임을 반영 (§2.2·§2.3)
 상태: 메모 — `20260702_laadi_plan.md`의 보강. 서로 다른 두 주제를 기록 목적으로 한
 문서에 담음. laadi 저장소 생성 시 §1은 계획서 §5.11(의존성·배포 정책)의 보강으로,
 §2는 신규 요구사항으로 각각 분배한다.
@@ -82,7 +84,10 @@ solver 사용 시에만 적용되는 규칙이 아니라 **모든 algorithm(suba
   ("core 하나"를 "thread 하나 사용"으로 세는 관례도 있으나 같은 의미.)
 - **예산 계산식**: 모든 step의 core 사용량 = keyword 값(미지정 시 default 1)로
   집계 — `max(step별 keyword 값) × instance 병렬화 수(worker)` 를 physical core
-  수와 비교, 초과 시 error.
+  수와 비교, 초과 시 error. composite subalgorithm(계획서 §5.3.1) 하에서 'step'은
+  flat 리스트가 아니라 **트리**이므로 `max`는 **step 트리 전체를 재귀**로 순회한다 —
+  composite 내부 자식 step의 keyword까지 포함(자식도 부모 step 안에서 순차이므로 peak는
+  여전히 max).
 - 이 원칙은 계획서 §2.4 실행 불변식(I1–I6) 목록의 **편입 후보** — "선언한 불변식은
   기계가 강제한다"(§3.3 원칙 2)의 적용 대상.
 
@@ -100,7 +105,8 @@ solver 사용 시에만 적용되는 규칙이 아니라 **모든 algorithm(suba
 - **동시성 모델**: step은 instance 안에서 순차이므로
   per-instance peak = max(step별 keyword 값, 기본 1),
   전체 peak = instance worker 수 × per-instance peak.
-  (시나리오 순차 실행 가정 — routix 관례 계승.)
+  (시나리오 순차 실행 가정 — routix 관례 계승.) composite(계획서 §5.3.1)의 자식 step도
+  부모 step 안에서 순차이므로 per-instance peak = **step 트리 전체에 대한 max**(재귀).
 - **ResourceMonitor와의 관계** (`20260528_resource_monitor.md`, v1.x): 본 검사는
   **정적 사전 예산 검사**, ResourceMonitor는 **동적 사후 관측** — 상보적.
   관측이 예산 초과를 발견하면 keyword 선언이 실제와 다르다는 신호 (§2.5의 CP-SAT

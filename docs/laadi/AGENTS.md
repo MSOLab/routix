@@ -89,6 +89,30 @@ graceful shutdown(cooperative stop→status: interrupted, 2회째 즉시 종료;
   19개 확보, 숏리스트 **sindbad·daedalus·gordius** + 차순위·선점 목록은 20260710
   문서 §4에 기록(선점 목록 재확인 불요). 최종 선정은 사용자 몫.
 
+### 2026-07-11 composite subalgorithm (정의로서의 시퀀스, 계획서 §5.3.1 신설)
+
+subalgorithm을 **다른 subalgorithm들의 순서 있는 시퀀스**로 정의할 수 있게 함 —
+§1.2의 "subalgorithm도 algorithm = 액자식(재귀)"을 §5.9(기록 측)에 이어 **정의 측**
+으로 완성. 지금까지 시퀀스 구성은 run_config의 flow에만 있고 §5.9는 결과를 *기록*만
+했다. 실전 선례(조사로 검증): `../ffc_dw_wET_2026`의 `coarsen_solve_reconstruct`가
+inline `solve_flow`(top-level flow와 동일 schema)를 받아 coarsen된 instance 위에서
+**같은 클래스의 자식 컨트롤러**로 실행 — IMPLEMENTED 2026-07-11
+(`plans/20260711/csr_solve_flow.md`, `orchestration/controller.py:2640·2816·2886`,
+`metadata/20260711/csr_subalg.yaml`). 설계: ① 정의 형태 둘(A 선언형 = spec의
+`steps` sub-flow·code_ref 없음 / B 래핑형 = code_ref + flow-typed param, CSR가 B의
+정본)이지만 **문법(§5.5)·실행(자식 frame subtree §5.9)·기록(frame 트리)은 하나** ②
+parameter passing: inner step params는 자식에 inline 전달, 래핑형 composite 자신의
+params(CSR `factor`·`timelimit`)는 wrapper 소관·자식엔 명시 구성한 (instance, budget,
+scale=`time_factor`) 전달 ③ **nesting 무제한 + cycle 금지**(v1; depth guard 없음,
+상한은 공유 시간 예산) ④ 검증 재귀화(child 등록 확인·params 정합·cycle 없음·flow-typed
+param 비어있지 않음) ⑤ I1(register ≤1)은 leaf 단위, composite 부모는 자식 outcome
+집계 후 1회 register(CSR: 후보 수집→dedup→원척 복원·검증→argmin, `obj_bound=None`).
+계획서 §5.3.1 신설 + §2.3(subalgorithm_spec mechanism)·§2.4(I1·cycle)·§5.5(문법
+공유)·§5.9(정의↔기록 대칭)·§6.1(S5 판정)·§6.2(`add subalgorithm --of`) 연동,
+`20260707` 메모 §2.2·§2.3(예산 트리 재귀) 갱신. **§10-8은 여전히 미해결** —
+`context.run_subflow`류가 §10-8의 프레임워크 주도형 특수해이나 opaque (2a) 심층 frame
+문제는 별개로 잔존.
+
 ## routix 병행 수정과 호스트 영향
 
 **호스트 3개 영향 조사 (2026-07-06, opus 서브에이전트)**: 러너 실패 의미론 변경에
